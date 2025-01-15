@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2019 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,17 +38,19 @@ public class InfoUpdateTrigger extends AbstractEventHandler<InstanceEvent> {
 
 	private final IntervalCheck intervalCheck;
 
-	public InfoUpdateTrigger(InfoUpdater infoUpdater, Publisher<InstanceEvent> publisher) {
+	public InfoUpdateTrigger(InfoUpdater infoUpdater, Publisher<InstanceEvent> publisher, Duration updateInterval,
+			Duration infoLifetime, Duration maxBackoff) {
 		super(publisher, InstanceEvent.class);
 		this.infoUpdater = infoUpdater;
-		this.intervalCheck = new IntervalCheck("info", this::updateInfo, Duration.ofMinutes(5), Duration.ofMinutes(1));
+		this.intervalCheck = new IntervalCheck("info", this::updateInfo, updateInterval, infoLifetime, maxBackoff);
 	}
 
 	@Override
 	protected Publisher<Void> handle(Flux<InstanceEvent> publisher) {
-		return publisher.filter((event) -> event instanceof InstanceEndpointsDetectedEvent
-				|| event instanceof InstanceStatusChangedEvent || event instanceof InstanceRegistrationUpdatedEvent)
-				.flatMap((event) -> this.updateInfo(event.getInstance()));
+		return publisher
+			.filter((event) -> event instanceof InstanceEndpointsDetectedEvent
+					|| event instanceof InstanceStatusChangedEvent || event instanceof InstanceRegistrationUpdatedEvent)
+			.flatMap((event) -> this.updateInfo(event.getInstance()));
 	}
 
 	protected Mono<Void> updateInfo(InstanceId instanceId) {

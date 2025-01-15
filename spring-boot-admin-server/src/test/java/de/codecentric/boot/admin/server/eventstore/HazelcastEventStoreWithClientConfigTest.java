@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2021 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,11 +18,11 @@ package de.codecentric.boot.admin.server.eventstore;
 
 import java.util.List;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import org.junit.jupiter.api.Tag;
-import org.springframework.boot.autoconfigure.hazelcast.HazelcastClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -35,8 +35,8 @@ import de.codecentric.boot.admin.server.domain.values.InstanceId;
 public class HazelcastEventStoreWithClientConfigTest extends AbstractEventStoreTest {
 
 	@Container
-	private static final GenericContainer<?> hazelcastServer = new GenericContainer<>("hazelcast/hazelcast:4.0")
-			.withExposedPorts(5701);
+	private static final GenericContainer<?> hazelcastServer = new GenericContainer<>("hazelcast/hazelcast:4.2.2")
+		.withExposedPorts(5701);
 
 	private final HazelcastInstance hazelcast;
 
@@ -50,13 +50,18 @@ public class HazelcastEventStoreWithClientConfigTest extends AbstractEventStoreT
 		return new HazelcastEventStore(maxLogSizePerAggregate, eventLog);
 	}
 
+	@Override
+	protected void shutdownStore() {
+		this.hazelcast.shutdown();
+	}
+
 	private HazelcastInstance createHazelcastInstance() {
 		String address = hazelcastServer.getContainerIpAddress() + ":" + hazelcastServer.getMappedPort(5701);
 
 		ClientConfig clientConfig = new ClientConfig();
 		clientConfig.getNetworkConfig().addAddress(address);
 
-		return new HazelcastClientFactory(clientConfig).getHazelcastInstance();
+		return HazelcastClient.newHazelcastClient(clientConfig);
 	}
 
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2019 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,7 +45,7 @@ import static org.mockito.Mockito.when;
 public class StatusUpdateTriggerTest {
 
 	private final Instance instance = Instance.create(InstanceId.of("id-1"))
-			.register(Registration.create("foo", "http://health-1").build());
+		.register(Registration.create("foo", "http://health-1").build());
 
 	private final StatusUpdater updater = mock(StatusUpdater.class);
 
@@ -56,8 +56,10 @@ public class StatusUpdateTriggerTest {
 	@BeforeEach
 	public void setUp() throws Exception {
 		when(this.updater.updateStatus(any(InstanceId.class))).thenReturn(Mono.empty());
+		when(this.updater.timeout(any())).thenReturn(this.updater);
 
-		this.trigger = new StatusUpdateTrigger(this.updater, this.events.flux());
+		this.trigger = new StatusUpdateTrigger(this.updater, this.events.flux(), Duration.ofSeconds(10),
+				Duration.ofSeconds(10), Duration.ofSeconds(60));
 		this.trigger.start();
 		await().until(this.events::wasSubscribed);
 	}
@@ -138,7 +140,7 @@ public class StatusUpdateTriggerTest {
 	public void should_continue_update_after_error() throws InterruptedException {
 		// when status-change event is emitted and an error is emitted
 		when(this.updater.updateStatus(any())).thenReturn(Mono.error(IllegalStateException::new))
-				.thenReturn(Mono.empty());
+			.thenReturn(Mono.empty());
 
 		this.events.next(new InstanceRegistrationUpdatedEvent(this.instance.getId(), this.instance.getVersion(),
 				this.instance.getRegistration()));

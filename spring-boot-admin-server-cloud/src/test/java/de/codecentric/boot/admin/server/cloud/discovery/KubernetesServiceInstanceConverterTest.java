@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2019 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,6 +21,7 @@ import java.util.Collections;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.kubernetes.commons.discovery.KubernetesDiscoveryProperties;
 
 import de.codecentric.boot.admin.server.domain.values.Registration;
 
@@ -31,16 +32,34 @@ import static org.mockito.Mockito.when;
 public class KubernetesServiceInstanceConverterTest {
 
 	@Test
-	public void convert_using_port_mgmt() {
-		ServiceInstance service = mock(ServiceInstance.class);
-		when(service.getUri()).thenReturn(URI.create("http://localhost:80"));
-		when(service.getServiceId()).thenReturn("test");
-		when(service.getMetadata()).thenReturn(Collections.singletonMap("port.management", "9080"));
+	void convert_using_port_mgmt() {
+		KubernetesDiscoveryProperties discoveryProperties = KubernetesDiscoveryProperties.DEFAULT;
+		ServiceInstance service = mockServiceInstanceWithManagementPort(
+				discoveryProperties.metadata().portsPrefix() + "management");
 
-		Registration registration = new KubernetesServiceInstanceConverter().convert(service);
+		Registration registration = new KubernetesServiceInstanceConverter(discoveryProperties).convert(service);
 
 		assertThat(registration.getManagementUrl()).isEqualTo("http://localhost:9080/actuator");
 		assertThat(registration.getHealthUrl()).isEqualTo("http://localhost:9080/actuator/health");
+	}
+
+	@Test
+	void fallback_for_port_mgmt() {
+		KubernetesDiscoveryProperties discoveryProperties = KubernetesDiscoveryProperties.DEFAULT;
+		ServiceInstance service = mockServiceInstanceWithManagementPort("management");
+
+		Registration registration = new KubernetesServiceInstanceConverter(discoveryProperties).convert(service);
+
+		assertThat(registration.getManagementUrl()).isEqualTo("http://localhost:9080/actuator");
+		assertThat(registration.getHealthUrl()).isEqualTo("http://localhost:9080/actuator/health");
+	}
+
+	private static ServiceInstance mockServiceInstanceWithManagementPort(String managementPortName) {
+		ServiceInstance service = mock(ServiceInstance.class);
+		when(service.getUri()).thenReturn(URI.create("http://localhost:80"));
+		when(service.getServiceId()).thenReturn("test");
+		when(service.getMetadata()).thenReturn(Collections.singletonMap(managementPortName, "9080"));
+		return service;
 	}
 
 }

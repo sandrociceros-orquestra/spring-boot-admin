@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2019 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,7 +34,7 @@ public class HomepageForwardingMatcherTest {
 	@Test
 	public void should_return_false_when_method_is_not_get() {
 		assertThat(this.matcher.test(new MockRequest("POST", "/viewRoute", singletonList(MediaType.TEXT_HTML))))
-				.isFalse();
+			.isFalse();
 	}
 
 	@Test
@@ -45,24 +45,23 @@ public class HomepageForwardingMatcherTest {
 	@Test
 	public void should_return_false_when_accepts_does_not_match() {
 		assertThat(this.matcher.test(new MockRequest("GET", "/viewRoute", singletonList(MediaType.APPLICATION_XML))))
-				.isFalse();
+			.isFalse();
 	}
 
 	@Test
 	public void should_return_false_when_path_is_excluded() {
 		assertThat(this.matcher
-				.test(new MockRequest("GET", "/viewRoute/12345/exclude", singletonList(MediaType.TEXT_HTML))))
-						.isFalse();
+			.test(new MockRequest("GET", "/viewRoute/12345/exclude", singletonList(MediaType.TEXT_HTML)))).isFalse();
 	}
 
 	@Test
 	public void should_return_true() {
 		assertThat(this.matcher
-				.test(new MockRequest("GET", "/viewRoute/detail?query", singletonList(MediaType.TEXT_HTML)))).isTrue();
+			.test(new MockRequest("GET", "/viewRoute/detail?query", singletonList(MediaType.TEXT_HTML)))).isTrue();
 	}
 
 	@Data
-	private static class MockRequest {
+	private static final class MockRequest {
 
 		private final String method;
 

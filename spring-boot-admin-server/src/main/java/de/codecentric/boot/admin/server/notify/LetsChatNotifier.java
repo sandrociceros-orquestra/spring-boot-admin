@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2018 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,21 +18,21 @@ package de.codecentric.boot.admin.server.notify;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.annotation.Nullable;
 
 import org.springframework.context.expression.MapAccessor;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ParserContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.expression.spel.support.DataBindingPropertyAccessor;
+import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.util.Base64Utils;
+import org.springframework.lang.Nullable;
 import org.springframework.web.client.RestTemplate;
 import reactor.core.publisher.Mono;
 
@@ -93,8 +93,8 @@ public class LetsChatNotifier extends AbstractStatusChangeNotifier {
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		// Let's Chat requiers the token as basic username, the password can be an
 		// arbitrary string.
-		String auth = Base64Utils
-				.encodeToString(String.format("%s:%s", token, username).getBytes(StandardCharsets.UTF_8));
+		String auth = Base64.getEncoder()
+			.encodeToString(String.format("%s:%s", token, username).getBytes(StandardCharsets.UTF_8));
 		headers.add(HttpHeaders.AUTHORIZATION, String.format("Basic %s", auth));
 		return Mono.fromRunnable(() -> restTemplate.exchange(createUrl(), HttpMethod.POST,
 				new HttpEntity<>(createMessage(event, instance), headers), Void.class));
@@ -119,8 +119,10 @@ public class LetsChatNotifier extends AbstractStatusChangeNotifier {
 		root.put("event", event);
 		root.put("instance", instance);
 		root.put("lastStatus", getLastStatus(event.getInstance()));
-		StandardEvaluationContext context = new StandardEvaluationContext(root);
-		context.addPropertyAccessor(new MapAccessor());
+		SimpleEvaluationContext context = SimpleEvaluationContext
+			.forPropertyAccessors(DataBindingPropertyAccessor.forReadOnlyAccess(), new MapAccessor())
+			.withRootObject(root)
+			.build();
 		return message.getValue(context, String.class);
 	}
 
@@ -128,25 +130,21 @@ public class LetsChatNotifier extends AbstractStatusChangeNotifier {
 		this.restTemplate = restTemplate;
 	}
 
-	public void setUrl(@Nullable URI url) {
-		this.url = url;
-	}
-
 	@Nullable
 	public URI getUrl() {
 		return url;
 	}
 
-	public void setUsername(String username) {
-		this.username = username;
+	public void setUrl(@Nullable URI url) {
+		this.url = url;
 	}
 
 	public String getUsername() {
 		return username;
 	}
 
-	public void setRoom(@Nullable String room) {
-		this.room = room;
+	public void setUsername(String username) {
+		this.username = username;
 	}
 
 	@Nullable
@@ -154,8 +152,8 @@ public class LetsChatNotifier extends AbstractStatusChangeNotifier {
 		return room;
 	}
 
-	public void setToken(@Nullable String token) {
-		this.token = token;
+	public void setRoom(@Nullable String room) {
+		this.room = room;
 	}
 
 	@Nullable
@@ -163,12 +161,16 @@ public class LetsChatNotifier extends AbstractStatusChangeNotifier {
 		return token;
 	}
 
-	public void setMessage(String message) {
-		this.message = parser.parseExpression(message, ParserContext.TEMPLATE_EXPRESSION);
+	public void setToken(@Nullable String token) {
+		this.token = token;
 	}
 
 	public String getMessage() {
 		return message.getExpressionString();
+	}
+
+	public void setMessage(String message) {
+		this.message = parser.parseExpression(message, ParserContext.TEMPLATE_EXPRESSION);
 	}
 
 }

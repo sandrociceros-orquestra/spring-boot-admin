@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2020 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -36,8 +36,8 @@ import static java.util.Arrays.asList;
 public class AdminServerProperties {
 
 	/**
-	 * The context-path prefixes the path where the Admin Servers statics assets and api
-	 * should be served. Relative to the Dispatcher-Servlet.
+	 * The context-path prefixes the path where the Admin Servers static assets and api
+	 * should be served, relative to the Dispatcher-Servlet.
 	 */
 	private String contextPath = "";
 
@@ -104,10 +104,24 @@ public class AdminServerProperties {
 		private Duration statusLifetime = Duration.ofMillis(10_000L);
 
 		/**
+		 * The maximal backoff for status check retries (retry after error has exponential
+		 * backoff, minimum backoff is 1 second).
+		 */
+		@DurationUnit(ChronoUnit.MILLIS)
+		private Duration statusMaxBackoff = Duration.ofMillis(60_000L);
+
+		/**
 		 * Time interval to check the info of instances,
 		 */
 		@DurationUnit(ChronoUnit.MILLIS)
 		private Duration infoInterval = Duration.ofMinutes(1L);
+
+		/**
+		 * The maximal backoff for info check retries (retry after error has exponential
+		 * backoff, minimum backoff is 1 second).
+		 */
+		@DurationUnit(ChronoUnit.MILLIS)
+		private Duration infoMaxBackoff = Duration.ofMinutes(10);
 
 		/**
 		 * Lifetime of info. The info won't be updated as long the last info isn't

@@ -48,10 +48,6 @@
             <artifactId>spring-cloud-context</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jolokia</groupId>
-            <artifactId>jolokia-core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
@@ -72,7 +68,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>de.codecentric.boot.admin.SpringBootAdminZookeeperApplication</mainClass>
+                    <mainClass>de.codecentric.boot.admin.sample.SpringBootAdminZookeeperApplication</mainClass>
                     <addResources>false</addResources>
                 </configuration>
             </plugin>

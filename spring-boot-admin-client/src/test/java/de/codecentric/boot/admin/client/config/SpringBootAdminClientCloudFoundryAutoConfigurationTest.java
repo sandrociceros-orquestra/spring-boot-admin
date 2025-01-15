@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2018 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,11 +34,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class SpringBootAdminClientCloudFoundryAutoConfigurationTest {
 
-	private final WebApplicationContextRunner contextRunner = new WebApplicationContextRunner().withConfiguration(
-			AutoConfigurations.of(EndpointAutoConfiguration.class, WebEndpointAutoConfiguration.class,
-					WebMvcAutoConfiguration.class, DispatcherServletAutoConfiguration.class,
-					RestTemplateAutoConfiguration.class, SpringBootAdminClientAutoConfiguration.class,
-					SpringBootAdminClientCloudFoundryAutoConfiguration.class));
+	private final WebApplicationContextRunner contextRunner = new WebApplicationContextRunner()
+		.withConfiguration(AutoConfigurations.of(EndpointAutoConfiguration.class, WebEndpointAutoConfiguration.class,
+				WebMvcAutoConfiguration.class, DispatcherServletAutoConfiguration.class,
+				RestTemplateAutoConfiguration.class, SpringBootAdminClientAutoConfiguration.class,
+				SpringBootAdminClientCloudFoundryAutoConfiguration.class));
 
 	@Test
 	public void non_cloud_platform() {
@@ -51,11 +51,12 @@ public class SpringBootAdminClientCloudFoundryAutoConfigurationTest {
 	@Test
 	public void cloudfoundry() {
 		this.contextRunner.withPropertyValues("spring.boot.admin.client.url:http://localhost:8081")
-				.withPropertyValues("VCAP_APPLICATION:{}").run((context) -> {
-					assertThat(context).hasSingleBean(CloudFoundryMetadataContributor.class);
-					assertThat(context).getBean(ApplicationFactory.class)
-							.isInstanceOf(CloudFoundryApplicationFactory.class);
-				});
+			.withPropertyValues("VCAP_APPLICATION:{}")
+			.run((context) -> {
+				assertThat(context).hasSingleBean(CloudFoundryMetadataContributor.class);
+				assertThat(context).getBean(ApplicationFactory.class)
+					.isInstanceOf(CloudFoundryApplicationFactory.class);
+			});
 	}
 
 	@Test

@@ -9,6 +9,9 @@
     "instances_caches": {
       "title": "Caches"
     },
+    "dependencies": {
+      "title": "Dependencies"
+    },
     "jvm": {
       "title": "JVM"
     },
@@ -21,4 +24,5 @@
     "web": {
       "title": "Web"
     }
-  }}
+  }
+}

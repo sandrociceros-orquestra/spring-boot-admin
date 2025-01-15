@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2019 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,8 +39,10 @@ public class HomepageForwardingFilter implements WebFilter {
 
 	public HomepageForwardingFilter(String homepage, List<String> routeIncludes, List<String> routeExcludes) {
 		this.homepage = homepage;
-		this.matcher = new HomepageForwardingMatcher<>(routeIncludes, routeExcludes, ServerHttpRequest::getMethodValue,
-				(r) -> r.getPath().pathWithinApplication().toString(), (r) -> r.getHeaders().getAccept());
+		this.matcher = new HomepageForwardingMatcher<>(routeIncludes, routeExcludes,
+				(request) -> request.getMethod().name(),
+				(request) -> request.getPath().pathWithinApplication().toString(),
+				(request) -> request.getHeaders().getAccept());
 	}
 
 	public HomepageForwardingFilter(HomepageForwardingFilterConfig filterConfig) {

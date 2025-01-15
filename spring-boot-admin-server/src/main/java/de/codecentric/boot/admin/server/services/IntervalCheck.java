@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2019 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,10 +23,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.logging.Level;
 
-import javax.annotation.Nullable;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.Nullable;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -43,9 +43,8 @@ import de.codecentric.boot.admin.server.domain.values.InstanceId;
  *
  * @author Johannes Edmeier
  */
+@Slf4j
 public class IntervalCheck {
-
-	private static final Logger log = LoggerFactory.getLogger(IntervalCheck.class);
 
 	private final String name;
 
@@ -53,8 +52,14 @@ public class IntervalCheck {
 
 	private final Function<InstanceId, Mono<Void>> checkFn;
 
+	@Setter
+	private Duration maxBackoff;
+
+	@Getter
+	@Setter
 	private Duration interval;
 
+	@Setter
 	private Duration minRetention;
 
 	@Nullable
@@ -63,26 +68,26 @@ public class IntervalCheck {
 	@Nullable
 	private Scheduler scheduler;
 
-	public IntervalCheck(String name, Function<InstanceId, Mono<Void>> checkFn) {
-		this(name, checkFn, Duration.ofSeconds(10), Duration.ofSeconds(10));
-	}
-
 	public IntervalCheck(String name, Function<InstanceId, Mono<Void>> checkFn, Duration interval,
-			Duration minRetention) {
+			Duration minRetention, Duration maxBackoff) {
 		this.name = name;
 		this.checkFn = checkFn;
 		this.interval = interval;
 		this.minRetention = minRetention;
+		this.maxBackoff = maxBackoff;
 	}
 
 	public void start() {
 		this.scheduler = Schedulers.newSingle(this.name + "-check");
 		this.subscription = Flux.interval(this.interval)
-				.doOnSubscribe((s) -> log.debug("Scheduled {}-check every {}", this.name, this.interval))
-				.log(log.getName(), Level.FINEST).subscribeOn(this.scheduler).concatMap((i) -> this.checkAllInstances())
-				.retryWhen(Retry.indefinitely()
-						.doBeforeRetry((s) -> log.warn("Unexpected error in {}-check", this.name, s.failure())))
-				.subscribe();
+			.doOnSubscribe((s) -> log.debug("Scheduled {}-check every {}", this.name, this.interval))
+			.log(log.getName(), Level.FINEST)
+			.subscribeOn(this.scheduler)
+			.concatMap((i) -> this.checkAllInstances())
+			.retryWhen(Retry.backoff(Long.MAX_VALUE, Duration.ofSeconds(1))
+				.maxBackoff(maxBackoff)
+				.doBeforeRetry((s) -> log.warn("Unexpected error in {}-check", this.name, s.failure())))
+			.subscribe(null, (error) -> log.error("Unexpected error in {}-check", name, error));
 	}
 
 	public void markAsChecked(InstanceId instanceId) {
@@ -92,8 +97,11 @@ public class IntervalCheck {
 	protected Mono<Void> checkAllInstances() {
 		log.debug("check {} for all instances", this.name);
 		Instant expiration = Instant.now().minus(this.minRetention);
-		return Flux.fromIterable(this.lastChecked.entrySet()).filter((e) -> e.getValue().isBefore(expiration))
-				.map(Map.Entry::getKey).flatMap(this.checkFn).then();
+		return Flux.fromIterable(this.lastChecked.entrySet())
+			.filter((entry) -> entry.getValue().isBefore(expiration))
+			.map(Map.Entry::getKey)
+			.flatMap(this.checkFn)
+			.then();
 	}
 
 	public void stop() {
@@ -105,14 +113,6 @@ public class IntervalCheck {
 			this.scheduler.dispose();
 			this.scheduler = null;
 		}
-	}
-
-	public void setInterval(Duration interval) {
-		this.interval = interval;
-	}
-
-	public void setMinRetention(Duration minRetention) {
-		this.minRetention = minRetention;
 	}
 
 }

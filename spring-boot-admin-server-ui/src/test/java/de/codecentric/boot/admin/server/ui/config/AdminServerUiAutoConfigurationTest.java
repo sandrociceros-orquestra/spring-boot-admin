@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2021 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,11 +16,11 @@
 
 package de.codecentric.boot.admin.server.ui.config;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletResponse;
-
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletResponse;
 import org.assertj.core.api.WithAssertions;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -54,13 +54,19 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 public class AdminServerUiAutoConfigurationTest implements WithAssertions {
 
+	@Test
+	void testNormalizeHomepageUrl() {
+		assertThat(AdminServerUiAutoConfiguration.normalizeHomepageUrl("/test/")).isEqualTo("/test");
+	}
+
 	@Nested
 	public class ReactiveUiConfigurationTest {
 
 		private final ReactiveWebApplicationContextRunner contextRunner = new ReactiveWebApplicationContextRunner()
-				.withPropertyValues("--spring.boot.admin.ui.available-languages=de", "--spring.webflux.base-path=test")
-				.withBean(AdminServerProperties.class).withBean(WebFluxProperties.class)
-				.withConfiguration(AutoConfigurations.of(AdminServerUiAutoConfiguration.class));
+			.withPropertyValues("--spring.boot.admin.ui.available-languages=de", "--spring.webflux.base-path=test")
+			.withBean(AdminServerProperties.class)
+			.withBean(WebFluxProperties.class)
+			.withConfiguration(AutoConfigurations.of(AdminServerUiAutoConfiguration.class));
 
 		@Mock
 		WebFilterChain webFilterChain;
@@ -70,17 +76,20 @@ public class AdminServerUiAutoConfigurationTest implements WithAssertions {
 				"/test/instances/1/actuator/logfile" })
 		public void contextPathIsRespectedInExcludedRoutes(String routeExcludes) {
 			MockServerHttpRequest serverHttpRequest = MockServerHttpRequest.get(routeExcludes)
-					.header(HttpHeaders.ACCEPT, MediaType.TEXT_HTML_VALUE).build();
+				.header(HttpHeaders.ACCEPT, MediaType.TEXT_HTML_VALUE)
+				.build();
 
 			ServerWebExchange serverWebExchange = spy(MockServerWebExchange.from(serverHttpRequest));
 
-			this.contextRunner.withUserConfiguration(SpringBootAdminServerEnabledCondition.class,
-					AdminServerMarkerConfiguration.Marker.class).run((context) -> {
-						HomepageForwardingFilter bean = context.getBean(HomepageForwardingFilter.class);
-						bean.filter(serverWebExchange, webFilterChain);
+			this.contextRunner
+				.withUserConfiguration(SpringBootAdminServerEnabledCondition.class,
+						AdminServerMarkerConfiguration.Marker.class)
+				.run((context) -> {
+					HomepageForwardingFilter bean = context.getBean(HomepageForwardingFilter.class);
+					bean.filter(serverWebExchange, webFilterChain);
 
-						verify(serverWebExchange, never()).mutate();
-					});
+					verify(serverWebExchange, never()).mutate();
+				});
 		}
 
 		@ParameterizedTest
@@ -88,17 +97,20 @@ public class AdminServerUiAutoConfigurationTest implements WithAssertions {
 				"/test/external" })
 		public void contextPathIsRespectedInIncludedRoutes(String routeIncludes) {
 			MockServerHttpRequest serverHttpRequest = MockServerHttpRequest.get(routeIncludes)
-					.header(HttpHeaders.ACCEPT, MediaType.TEXT_HTML_VALUE).build();
+				.header(HttpHeaders.ACCEPT, MediaType.TEXT_HTML_VALUE)
+				.build();
 
 			ServerWebExchange serverWebExchange = spy(MockServerWebExchange.from(serverHttpRequest));
 
-			this.contextRunner.withUserConfiguration(SpringBootAdminServerEnabledCondition.class,
-					AdminServerMarkerConfiguration.Marker.class).run((context) -> {
-						HomepageForwardingFilter bean = context.getBean(HomepageForwardingFilter.class);
-						bean.filter(serverWebExchange, webFilterChain);
+			this.contextRunner
+				.withUserConfiguration(SpringBootAdminServerEnabledCondition.class,
+						AdminServerMarkerConfiguration.Marker.class)
+				.run((context) -> {
+					HomepageForwardingFilter bean = context.getBean(HomepageForwardingFilter.class);
+					bean.filter(serverWebExchange, webFilterChain);
 
-						verify(serverWebExchange, atMostOnce()).mutate();
-					});
+					verify(serverWebExchange, atMostOnce()).mutate();
+				});
 		}
 
 	}
@@ -107,10 +119,9 @@ public class AdminServerUiAutoConfigurationTest implements WithAssertions {
 	public class ServletUiConfiguration {
 
 		private final WebApplicationContextRunner contextRunner = new WebApplicationContextRunner()
-				.withPropertyValues("--spring.boot.admin.ui.available-languages=de",
-						"--spring.boot.admin.contextPath=test")
-				.withBean(AdminServerProperties.class)
-				.withConfiguration(AutoConfigurations.of(AdminServerUiAutoConfiguration.class));
+			.withPropertyValues("--spring.boot.admin.ui.available-languages=de", "--spring.boot.admin.contextPath=test")
+			.withBean(AdminServerProperties.class)
+			.withConfiguration(AutoConfigurations.of(AdminServerUiAutoConfiguration.class));
 
 		@ParameterizedTest
 		@CsvSource({ "/test/extensions/myextension", "/test/instances/1/actuator/heapdump",
@@ -119,14 +130,16 @@ public class AdminServerUiAutoConfigurationTest implements WithAssertions {
 			MockHttpServletRequest httpServletRequest = spy(new MockHttpServletRequest("GET", routeExcludes));
 			httpServletRequest.addHeader(HttpHeaders.ACCEPT, MediaType.TEXT_HTML_VALUE);
 
-			this.contextRunner.withUserConfiguration(SpringBootAdminServerEnabledCondition.class,
-					AdminServerMarkerConfiguration.Marker.class).run((context) -> {
-						de.codecentric.boot.admin.server.ui.web.servlet.HomepageForwardingFilter bean = context.getBean(
-								de.codecentric.boot.admin.server.ui.web.servlet.HomepageForwardingFilter.class);
-						bean.doFilter(httpServletRequest, mock(ServletResponse.class), mock(FilterChain.class));
+			this.contextRunner
+				.withUserConfiguration(SpringBootAdminServerEnabledCondition.class,
+						AdminServerMarkerConfiguration.Marker.class)
+				.run((context) -> {
+					de.codecentric.boot.admin.server.ui.web.servlet.HomepageForwardingFilter bean = context
+						.getBean(de.codecentric.boot.admin.server.ui.web.servlet.HomepageForwardingFilter.class);
+					bean.doFilter(httpServletRequest, mock(ServletResponse.class), mock(FilterChain.class));
 
-						verify(httpServletRequest, never()).getRequestDispatcher(any());
-					});
+					verify(httpServletRequest, never()).getRequestDispatcher(any());
+				});
 		}
 
 		@ParameterizedTest
@@ -136,14 +149,16 @@ public class AdminServerUiAutoConfigurationTest implements WithAssertions {
 			MockHttpServletRequest httpServletRequest = spy(new MockHttpServletRequest("GET", routeIncludes));
 			httpServletRequest.addHeader(HttpHeaders.ACCEPT, MediaType.TEXT_HTML_VALUE);
 
-			this.contextRunner.withUserConfiguration(SpringBootAdminServerEnabledCondition.class,
-					AdminServerMarkerConfiguration.Marker.class).run((context) -> {
-						de.codecentric.boot.admin.server.ui.web.servlet.HomepageForwardingFilter bean = context.getBean(
-								de.codecentric.boot.admin.server.ui.web.servlet.HomepageForwardingFilter.class);
-						bean.doFilter(httpServletRequest, new MockHttpServletResponse(), mock(FilterChain.class));
+			this.contextRunner
+				.withUserConfiguration(SpringBootAdminServerEnabledCondition.class,
+						AdminServerMarkerConfiguration.Marker.class)
+				.run((context) -> {
+					de.codecentric.boot.admin.server.ui.web.servlet.HomepageForwardingFilter bean = context
+						.getBean(de.codecentric.boot.admin.server.ui.web.servlet.HomepageForwardingFilter.class);
+					bean.doFilter(httpServletRequest, new MockHttpServletResponse(), mock(FilterChain.class));
 
-						verify(httpServletRequest, atMostOnce()).getRequestDispatcher(any());
-					});
+					verify(httpServletRequest, atMostOnce()).getRequestDispatcher(any());
+				});
 		}
 
 	}

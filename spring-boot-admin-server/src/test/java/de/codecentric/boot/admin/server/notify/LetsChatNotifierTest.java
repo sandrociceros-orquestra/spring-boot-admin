@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2018 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ package de.codecentric.boot.admin.server.notify;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,7 +28,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.util.Base64Utils;
 import org.springframework.web.client.RestTemplate;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -56,7 +56,7 @@ public class LetsChatNotifierTest {
 	private static final String host = "http://localhost";
 
 	private static final Instance instance = Instance.create(InstanceId.of("-id-"))
-			.register(Registration.create("App", "http://health").build());
+		.register(Registration.create("App", "http://health").build());
 
 	private LetsChatNotifier notifier;
 
@@ -78,15 +78,15 @@ public class LetsChatNotifierTest {
 	@Test
 	public void test_onApplicationEvent_resolve() {
 		StepVerifier
-				.create(notifier.notify(
-						new InstanceStatusChangedEvent(instance.getId(), instance.getVersion(), StatusInfo.ofDown())))
-				.verifyComplete();
+			.create(notifier
+				.notify(new InstanceStatusChangedEvent(instance.getId(), instance.getVersion(), StatusInfo.ofDown())))
+			.verifyComplete();
 		clearInvocations(restTemplate);
 
 		StepVerifier
-				.create(notifier.notify(
-						new InstanceStatusChangedEvent(instance.getId(), instance.getVersion(), StatusInfo.ofUp())))
-				.verifyComplete();
+			.create(notifier
+				.notify(new InstanceStatusChangedEvent(instance.getId(), instance.getVersion(), StatusInfo.ofUp())))
+			.verifyComplete();
 
 		HttpEntity<?> expected = expectedMessage(standardMessage("UP"));
 		verify(restTemplate).exchange(eq(URI.create(String.format("%s/rooms/%s/messages", host, room))),
@@ -97,15 +97,15 @@ public class LetsChatNotifierTest {
 	public void test_onApplicationEvent_resolve_with_custom_message() {
 		notifier.setMessage("TEST");
 		StepVerifier
-				.create(notifier.notify(
-						new InstanceStatusChangedEvent(instance.getId(), instance.getVersion(), StatusInfo.ofDown())))
-				.verifyComplete();
+			.create(notifier
+				.notify(new InstanceStatusChangedEvent(instance.getId(), instance.getVersion(), StatusInfo.ofDown())))
+			.verifyComplete();
 		clearInvocations(restTemplate);
 
 		StepVerifier
-				.create(notifier.notify(
-						new InstanceStatusChangedEvent(instance.getId(), instance.getVersion(), StatusInfo.ofUp())))
-				.verifyComplete();
+			.create(notifier
+				.notify(new InstanceStatusChangedEvent(instance.getId(), instance.getVersion(), StatusInfo.ofUp())))
+			.verifyComplete();
 
 		HttpEntity<?> expected = expectedMessage("TEST");
 		verify(restTemplate).exchange(eq(URI.create(String.format("%s/rooms/%s/messages", host, room))),
@@ -115,7 +115,8 @@ public class LetsChatNotifierTest {
 	private HttpEntity<?> expectedMessage(String message) {
 		HttpHeaders httpHeaders = new HttpHeaders();
 		httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-		String auth = Base64Utils.encodeToString(String.format("%s:%s", token, user).getBytes(StandardCharsets.UTF_8));
+		String auth = Base64.getEncoder()
+			.encodeToString(String.format("%s:%s", token, user).getBytes(StandardCharsets.UTF_8));
 		httpHeaders.add(HttpHeaders.AUTHORIZATION, String.format("Basic %s", auth));
 		Map<String, Object> messageJson = new HashMap<>();
 		messageJson.put("text", message);

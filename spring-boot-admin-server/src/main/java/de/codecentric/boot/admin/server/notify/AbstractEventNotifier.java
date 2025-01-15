@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2018 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,9 +48,11 @@ public abstract class AbstractEventNotifier implements Notifier {
 			return Mono.empty();
 		}
 
-		return repository.find(event.getInstance()).filter((instance) -> shouldNotify(event, instance))
-				.flatMap((instance) -> doNotify(event, instance))
-				.doOnError((ex) -> getLogger().error("Couldn't notify for event {} ", event, ex)).then();
+		return repository.find(event.getInstance())
+			.filter((instance) -> shouldNotify(event, instance))
+			.flatMap((instance) -> doNotify(event, instance))
+			.doOnError((ex) -> getLogger().error("Couldn't notify for event {} ", event, ex))
+			.then();
 	}
 
 	protected boolean shouldNotify(InstanceEvent event, Instance instance) {

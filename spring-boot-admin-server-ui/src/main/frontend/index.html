@@ -14,38 +14,46 @@
   ~ limitations under the License.
   -->
 
-<!DOCTYPE html>
-
-<html>
-<head>
-    <base th:href="${baseUrl}" href="/">
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <meta name="format-detection" content="telephone=no,email=no">
-    <meta name="theme-color" content="#42d3a5">
-
-    <!-- include extensions -->
-    <th:block th:each="cssExtension : ${cssExtensions}">
-        <link rel="preload" th:href="'extensions/' + ${cssExtension.resourcePath}" as="style">
-    </th:block>
-    <th:block th:each="jsExtension : ${jsExtensions}">
-        <link rel="preload" th:href="'extensions/' + ${jsExtension.resourcePath}" as="script">
-    </th:block>
-    <th:block th:each="cssExtension : ${cssExtensions}">
-        <link th:href="'extensions/' + ${cssExtension.resourcePath}" rel="stylesheet">
-    </th:block>
-
-    <link rel="shortcut icon" th:href="${uiSettings.favicon}" type="image/png">
+<!doctype html>
+<html class="h-full">
+  <head>
+    <base href="/" th:href="${baseUrl}" />
+    <meta charset="utf-8" />
     <title th:text="${uiSettings.title}">Spring Boot Admin</title>
-</head>
-<body>
+    <link
+      rel="shortcut icon"
+      th:href="${uiSettings.favicon}"
+      type="image/png"
+    />
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+    <meta content="telephone=no,email=no" name="format-detection" />
+    <meta
+      content="#42d3a5"
+      name="theme-color"
+      th:content="${uiSettings.theme.color}"
+    />
 
-<div id="app"></div>
+    <link href="./index.css" rel="stylesheet" />
+    <link href="/variables.css" rel="stylesheet" />
 
-<script lang="javascript" src="sba-settings.js"></script>
-<!-- include extensions -->
-<th:block th:each="jsExtension : ${jsExtensions}">
-    <script lang="javascript" th:src="'extensions/' + ${jsExtension.resourcePath}"></script>
-</th:block>
-</body>
+    <link
+      as="style"
+      rel="preload"
+      th:each="cssExtension : ${cssExtensions}"
+      th:href="'extensions/' + ${cssExtension.resourcePath}"
+    />
+    <script lang="javascript" src="sba-settings.js"></script>
+    <link
+      as="script"
+      rel="preload"
+      th:each="jsExtension : ${jsExtensions}"
+      th:href="'extensions/' + ${jsExtension.resourcePath}"
+    />
+  </head>
+  <body class="h-full">
+    <div id="app"></div>
+
+    <script src="./index.ts" type="module"></script>
+  </body>
 </html>

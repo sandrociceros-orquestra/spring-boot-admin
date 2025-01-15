@@ -15,75 +15,140 @@
   -->
 
 <template>
-  <section :class="{ 'is-loading' : !hasLoaded }" class="section">
-    <sba-alert v-if="error" :error="error" :title="$t('instances.loggers.fetch_failed')" />
+  <sba-instance-section :error="error" :loading="!hasLoaded">
+    <template #before>
+      <sba-sticky-subnav>
+        <div class="flex gap-2">
+          <sba-toggle-scope-button
+            v-if="instanceCount > 1"
+            v-model="scope"
+            :instance-count="instanceCount"
+            :show-info="false"
+          />
 
-    <div v-sticks-below="['#navigation']" class="loggers__header">
-      <div class="field is-grouped">
-        <div class="control">
-          <sba-toggle-scope-button v-if="instanceCount > 1"
-                                   v-model="scope"
-                                   :instance-count="instanceCount"
+          <div class="flex-1">
+            <sba-input
+              v-model="filter.name"
+              :placeholder="$t('term.filter')"
+              name="filter"
+              type="search"
+            >
+              <template #prepend>
+                <font-awesome-icon icon="filter" />
+              </template>
+              <template #append>
+                <span v-text="filteredLoggers.length" /> /
+                <span v-text="loggerConfig.loggers.length" />
+              </template>
+            </sba-input>
+          </div>
+
+          <!-- FILTER -->
+          <div>
+            <div class="flex items-start">
+              <div class="flex items-center h-5">
+                <input
+                  id="classOnly"
+                  v-model="filter.classOnly"
+                  class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                  name="wraplines"
+                  type="checkbox"
+                />
+              </div>
+              <div class="ml-3 text-sm">
+                <label
+                  class="font-medium text-gray-700"
+                  for="classOnly"
+                  v-text="t('instances.loggers.filter.class_only')"
+                />
+              </div>
+            </div>
+
+            <div class="flex items-start">
+              <div class="flex items-center h-5">
+                <input
+                  id="configuredOnly"
+                  v-model="filter.configuredOnly"
+                  class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                  name="wraplines"
+                  type="checkbox"
+                />
+              </div>
+              <div class="ml-3 text-sm">
+                <label
+                  class="font-medium text-gray-700"
+                  for="configuredOnly"
+                  v-text="t('instances.loggers.filter.configured')"
+                />
+              </div>
+            </div>
+          </div>
+          <!-- // FILTER -->
+        </div>
+      </sba-sticky-subnav>
+    </template>
+
+    <sba-panel
+      v-if="loggerConfig.groups"
+      :title="t('instances.loggers.group.label')"
+    >
+      <loggers-list
+        :infinite-scroll="false"
+        :levels="loggerConfig.levels"
+        :loggers="loggerConfig.groups"
+        :loggers-status="loggersStatus"
+        @configure-logger="
+          ({ logger, level }) => configureLogger(logger, level)
+        "
+      />
+    </sba-panel>
+
+    <sba-panel :title="t('instances.loggers.label')">
+      <div v-if="failedInstances > 0" class="message is-warning">
+        <div class="message-body">
+          <sba-alert
+            :title="
+              t('instances.loggers.fetch_failed_some_instances', {
+                failed: failedInstances,
+                count: instanceCount,
+              })
+            "
+            severity="WARN"
           />
         </div>
-        <div class="control is-expanded">
-          <div class="field has-addons">
-            <p class="control is-expanded has-icons-left">
-              <input v-model="filter.name" class="input" type="search">
-              <span class="icon is-small is-left">
-                <font-awesome-icon icon="filter" />
-              </span>
-            </p>
-            <p class="control">
-              <span class="button is-static">
-                <span v-text="filteredLoggers.length" /> / <span v-text="loggerConfig.loggers.length" />
-              </span>
-            </p>
-          </div>
-
-          <div class="field is-grouped">
-            <div class="control">
-              <label class="checkbox">
-                <input v-model="filter.classOnly" type="checkbox">
-                {{ $t('instances.loggers.filter.class_only') }}
-              </label>
-            </div>
-            <div class="control">
-              <label class="checkbox">
-                <input v-model="filter.configuredOnly" type="checkbox">
-                {{ $t('instances.loggers.filter.configured') }}
-              </label>
-            </div>
-          </div>
-        </div>
       </div>
-    </div>
 
-    <div v-if="failedInstances > 0" class="message is-warning">
-      <div class="message-body">
-        <font-awesome-icon class="has-text-warning" icon="exclamation-triangle" />
-        <span
-          v-text="$t('instances.loggers.fetch_failed_some_instances', {failed: failedInstances, count: instanceCount})"
-        />
-      </div>
-    </div>
-
-    <loggers-list
-      :levels="loggerConfig.levels"
-      :loggers="filteredLoggers"
-      :loggers-status="loggersStatus"
-      @configureLogger="({logger, level}) => configureLogger(logger, level)"
-    />
-  </section>
+      <loggers-list
+        :levels="loggerConfig.levels"
+        :loggers="filteredLoggers"
+        :loggers-status="loggersStatus"
+        @configure-logger="
+          ({ logger, level }) => configureLogger(logger, level)
+        "
+      />
+    </sba-panel>
+  </sba-instance-section>
 </template>
 
-<script>
-import sticksBelow from '@/directives/sticks-below';
-import {finalize, from, listen} from '@/utils/rxjs';
-import LoggersList from './loggers-list';
-import SbaToggleScopeButton from '@/components/sba-toggle-scope-button';
+<script setup lang="ts">
+import { computed, reactive, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
-const isClassName = name => /\.[A-Z]/.test(name);
+import { ActionScope } from '@/components/ActionScope';
+import SbaAlert from '@/components/sba-alert';
+import SbaToggleScopeButton from '@/components/sba-toggle-scope-button.vue';
+
+import { finalize, from, listen } from '@/utils/rxjs';
+import LoggersList from '@/views/instances/loggers/loggers-list';
+import {
+  ApplicationLoggers,
+  InstanceLoggers,
+} from '@/views/instances/loggers/service';
+import SbaInstanceSection from '@/views/instances/shell/sba-instance-section';
+
+const { t } = useI18n();
+
+const isClassName = (name) => /\.[A-Z]/.test(name);
 
 const addToFilter = (oldFilter, addedFilter) =>
   !oldFilter
@@ -91,122 +156,116 @@ const addToFilter = (oldFilter, addedFilter) =>
     : (val, key) => oldFilter(val, key) && addedFilter(val, key);
 
 const addLoggerCreationEntryIfLoggerNotPresent = (nameFilter, loggers) => {
-  if (nameFilter && !loggers.some(logger => logger.name === nameFilter)) {
+  if (nameFilter && !loggers.some((logger) => logger.name === nameFilter)) {
     loggers.unshift({
-      level: [{
-        configuredLevel: null,
-        effectiveLevel: null,
-        instanceId: null
-      }],
+      level: [
+        {
+          configuredLevel: null,
+          effectiveLevel: null,
+          instanceId: null,
+        },
+      ],
       name: nameFilter,
-      isNew: true
-    })
+      isNew: true,
+    });
   }
 };
 
-export default {
-  components: {SbaToggleScopeButton, LoggersList},
-  directives: {sticksBelow},
-  props: {
-    instanceCount: {
-      type: Number,
-      required: true
-    },
-    loggersService: {
-      type: Object,
-      required: true
+const { loggersService, instanceCount = 0 } = defineProps<{
+  instanceCount: number;
+  loggersService: InstanceLoggers | ApplicationLoggers;
+}>();
+
+const emit = defineEmits<{
+  (
+    e: 'changeScope',
+    scope: ActionScope.APPLICATION | ActionScope.INSTANCE,
+  ): void;
+}>();
+
+const hasLoaded = ref(false);
+const error = ref(null);
+const failedInstances = ref(0);
+const loggerConfig = ref({ loggers: [], levels: [], groups: [] });
+const loggersStatus = ref({});
+const filter = reactive({
+  name: '',
+  classOnly: false,
+  configuredOnly: false,
+});
+const scope = ref(ActionScope.APPLICATION);
+
+const filteredLoggers = computed(() => {
+  const filterFn = getFilterFn();
+  const filteredLoggers = filterFn
+    ? loggerConfig.value.loggers.filter(filterFn)
+    : loggerConfig.value.loggers;
+  addLoggerCreationEntryIfLoggerNotPresent(filter.name, filteredLoggers);
+  return filteredLoggers;
+});
+
+watch(scope, (scope) => {
+  emit('changeScope', scope);
+});
+
+watch(
+  () => loggersService,
+  () => {
+    if (loggersService) {
+      fetchLoggers();
     }
   },
-  data() {
-    return {
-      hasLoaded: false,
-      error: null,
-      failedInstances: 0,
-      loggerConfig: {loggers: [], levels: []},
-      filter: {
-        name: '',
-        classOnly: false,
-        configuredOnly: false,
-      },
-      loggersStatus: {},
-      scope: this.instanceCount > 1 ? 'application' : 'instance'
-    }
-  },
-  computed: {
-    filteredLoggers() {
-      const filterFn = this.getFilterFn();
-      const filteredLoggers = filterFn ? this.loggerConfig.loggers.filter(filterFn) : this.loggerConfig.loggers;
-      addLoggerCreationEntryIfLoggerNotPresent(this.filter.name, filteredLoggers);
-      return filteredLoggers;
-    }
-  },
-  watch: {
-    loggersService: {
-      immediate: true,
-      handler() {
-        return this.fetchLoggers();
-      }
-    }
-  },
-  methods: {
-    configureLogger(logger, level) {
-      const vm = this;
-      from(vm.loggersService.configureLogger(logger.name, level))
-        .pipe(
-          listen(status => vm.$set(vm.loggersStatus, logger.name, {level, status})),
-          finalize(() => vm.fetchLoggers())
-        )
-        .subscribe({
-          error: (error) => console.warn(`Configuring logger '${logger.name}' failed:`, error)
-        });
-    },
-    async fetchLoggers() {
-      this.error = null;
-      this.failedInstances = 0;
-      try {
-        const {errors, ...loggerConfig} = await this.loggersService.fetchLoggers();
-        this.loggerConfig = Object.freeze(loggerConfig);
-        this.failedInstances = errors.length;
-      } catch (error) {
-        console.warn('Fetching loggers failed:', error);
-        this.error = error;
-      }
-      this.hasLoaded = true;
-    },
-    getFilterFn() {
-      let filterFn = null;
+  { immediate: true },
+);
 
-      if (this.filter.classOnly) {
-        filterFn = addToFilter(filterFn, logger => isClassName(logger.name));
-      }
+function configureLogger(logger, level) {
+  from(loggersService.configureLogger(logger.name, level))
+    .pipe(
+      listen(
+        (status) => (loggersStatus.value[logger.name] = { level, status }),
+      ),
+      finalize(() => fetchLoggers()),
+    )
+    .subscribe({
+      error: (error) =>
+        console.warn(`Configuring logger '${logger.name}' failed:`, error),
+    });
+}
 
-      if (this.filter.configuredOnly) {
-        filterFn = addToFilter(filterFn, logger => logger.level.some(l => Boolean(l.configuredLevel)));
-      }
-
-      if (this.filter.name) {
-        const normalizedFilter = this.filter.name.toLowerCase();
-        filterFn = addToFilter(filterFn, logger => logger.name.toLowerCase().includes(normalizedFilter));
-      }
-
-      return filterFn;
-    }
+async function fetchLoggers() {
+  error.value = null;
+  failedInstances.value = 0;
+  try {
+    let { errors, ...rest } = await loggersService.fetchLoggers();
+    loggerConfig.value = Object.freeze(rest);
+    failedInstances.value = errors.length;
+  } catch (e) {
+    console.warn('Fetching loggers failed:', e);
+    error.value = e;
   }
+  hasLoaded.value = true;
+}
+
+function getFilterFn() {
+  let filterFn = null;
+
+  if (filter.classOnly) {
+    filterFn = addToFilter(filterFn, (logger) => isClassName(logger.name));
+  }
+
+  if (filter.configuredOnly) {
+    filterFn = addToFilter(filterFn, (logger) =>
+      logger.level.some((l) => Boolean(l.configuredLevel)),
+    );
+  }
+
+  if (filter.name) {
+    const normalizedFilter = filter.name.toLowerCase();
+    filterFn = addToFilter(filterFn, (logger) =>
+      logger.name.toLowerCase().includes(normalizedFilter),
+    );
+  }
+
+  return filterFn;
 }
 </script>
-
-<style lang="scss">
-@import "~@/assets/css/utilities";
-
-.loggers {
-  &__header {
-    background-color: $white;
-    z-index: 10;
-    padding: 0.5em 1em;
-  }
-
-  &__toggle-scope {
-    width: 10em;
-  }
-}
-</style>

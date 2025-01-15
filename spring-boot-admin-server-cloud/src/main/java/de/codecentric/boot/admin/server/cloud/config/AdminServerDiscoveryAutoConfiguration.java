@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2019 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandi
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.kubernetes.client.discovery.KubernetesInformerDiscoveryClient;
+import org.springframework.cloud.kubernetes.commons.discovery.KubernetesDiscoveryProperties;
 import org.springframework.cloud.kubernetes.fabric8.discovery.KubernetesDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
@@ -87,8 +88,9 @@ public class AdminServerDiscoveryAutoConfiguration {
 
 		@Bean
 		@ConfigurationProperties(prefix = "spring.boot.admin.discovery.converter")
-		public KubernetesServiceInstanceConverter serviceInstanceConverter() {
-			return new KubernetesServiceInstanceConverter();
+		public KubernetesServiceInstanceConverter serviceInstanceConverter(
+				KubernetesDiscoveryProperties discoveryProperties) {
+			return new KubernetesServiceInstanceConverter(discoveryProperties);
 		}
 
 	}

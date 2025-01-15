@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2019 the original author or authors.
+ * Copyright 2014-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -42,6 +42,7 @@ import de.codecentric.boot.admin.server.domain.entities.InstanceRepository;
 import de.codecentric.boot.admin.server.domain.values.InstanceId;
 import de.codecentric.boot.admin.server.domain.values.Registration;
 import de.codecentric.boot.admin.server.services.InstanceRegistry;
+import de.codecentric.boot.admin.server.web.client.RefreshInstancesEvent;
 
 /**
  * Listener for Heartbeats events to publish all services to the instance registry.
@@ -106,6 +107,11 @@ public class InstanceDiscoveryListener {
 	}
 
 	@EventListener
+	public void onRefreshInstances(RefreshInstancesEvent event) {
+		discover();
+	}
+
+	@EventListener
 	public void onParentHeartbeat(ParentHeartbeatEvent event) {
 		discoverIfNeeded(event.getValue());
 	}
@@ -123,20 +129,26 @@ public class InstanceDiscoveryListener {
 
 	protected void discover() {
 		log.debug("Discovering new instances from DiscoveryClient");
-		Flux.fromIterable(discoveryClient.getServices()).filter(this::shouldRegisterService)
-				.flatMapIterable(discoveryClient::getInstances).filter(this::shouldRegisterInstanceBasedOnMetadata)
-				.flatMap(this::registerInstance).collect(Collectors.toSet()).flatMap(this::removeStaleInstances)
-				.subscribe((v) -> {
-				}, (ex) -> log.error("Unexpected error.", ex));
+		Flux.fromIterable(discoveryClient.getServices())
+			.filter(this::shouldRegisterService)
+			.flatMapIterable(discoveryClient::getInstances)
+			.filter(this::shouldRegisterInstanceBasedOnMetadata)
+			.flatMap(this::registerInstance)
+			.collect(Collectors.toSet())
+			.flatMap(this::removeStaleInstances)
+			.subscribe((v) -> {
+			}, (ex) -> log.error("Unexpected error.", ex));
 	}
 
 	protected Mono<Void> removeStaleInstances(Set<InstanceId> registeredInstanceIds) {
-		return repository.findAll().filter(Instance::isRegistered)
-				.filter((instance) -> SOURCE.equals(instance.getRegistration().getSource())).map(Instance::getId)
-				.filter((id) -> !registeredInstanceIds.contains(id))
-				.doOnNext(
-						(id) -> log.info("Instance '{}' missing in DiscoveryClient services and will be removed.", id))
-				.flatMap(registry::deregister).then();
+		return repository.findAll()
+			.filter(Instance::isRegistered)
+			.filter((instance) -> SOURCE.equals(instance.getRegistration().getSource()))
+			.map(Instance::getId)
+			.filter((id) -> !registeredInstanceIds.contains(id))
+			.doOnNext((id) -> log.info("Instance '{}' missing in DiscoveryClient services and will be removed.", id))
+			.flatMap(registry::deregister)
+			.then();
 	}
 
 	protected boolean shouldRegisterService(final String serviceId) {

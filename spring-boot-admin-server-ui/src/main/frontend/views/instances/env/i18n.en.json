@@ -5,6 +5,10 @@
       "manager": "Environment Manager",
       "active_profile": "Profile",
       "context_refresh": "Refresh context",
+      "bus_refresh": "Spring Cloud Bus-refresh",
+      "bus_refresh_success": "Spring Cloud Bus successfully refreshed.",
+      "bus_refresh_failure": "Failure: Unable to trigger Spring Cloud Bus refresh!",
+      "bus_refresh_title": "Sends a refresh message to the configured Spring Cloud Bus which broadcasts a refresh to all nodes listening",
       "context_refresh_failed": "Failed",
       "context_refreshed": "Context refreshed",
       "context_reset": "Reset",
@@ -13,12 +17,12 @@
       "context_update": "Update",
       "context_update_failed": "Failed",
       "context_updated": "Updated",
-      "fetch_failed": "Fetching environment failed.",
       "no_properties": "No properties set",
       "title": "Environment Manager",
       "refresh": "Refresh environment",
       "application": "Application",
-      "instance": "Instance"
+      "instance": "Instance",
+      "refreshed_configurations": "Refreshed configurations:"
     }
   }
 }
