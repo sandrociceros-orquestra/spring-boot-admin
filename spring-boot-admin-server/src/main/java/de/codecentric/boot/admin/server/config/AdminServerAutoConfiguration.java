@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2020 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,9 @@
 
 package de.codecentric.boot.admin.server.config;
 
+import java.time.Duration;
+
+import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Publisher;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
@@ -34,12 +37,14 @@ import de.codecentric.boot.admin.server.domain.events.InstanceEvent;
 import de.codecentric.boot.admin.server.eventstore.InMemoryEventStore;
 import de.codecentric.boot.admin.server.eventstore.InstanceEventPublisher;
 import de.codecentric.boot.admin.server.eventstore.InstanceEventStore;
+import de.codecentric.boot.admin.server.services.ApiMediaTypeHandler;
 import de.codecentric.boot.admin.server.services.ApplicationRegistry;
 import de.codecentric.boot.admin.server.services.EndpointDetectionTrigger;
 import de.codecentric.boot.admin.server.services.EndpointDetector;
 import de.codecentric.boot.admin.server.services.HashingInstanceUrlIdGenerator;
 import de.codecentric.boot.admin.server.services.InfoUpdateTrigger;
 import de.codecentric.boot.admin.server.services.InfoUpdater;
+import de.codecentric.boot.admin.server.services.InstanceFilter;
 import de.codecentric.boot.admin.server.services.InstanceIdGenerator;
 import de.codecentric.boot.admin.server.services.InstanceRegistry;
 import de.codecentric.boot.admin.server.services.StatusUpdateTrigger;
@@ -55,6 +60,7 @@ import de.codecentric.boot.admin.server.web.client.InstanceWebClient;
 @EnableConfigurationProperties(AdminServerProperties.class)
 @ImportAutoConfiguration({ AdminServerInstanceWebClientConfiguration.class, AdminServerWebConfiguration.class })
 @AutoConfigureAfter({ WebClientAutoConfiguration.class })
+@Slf4j
 @Lazy(false)
 public class AdminServerAutoConfiguration {
 
@@ -66,9 +72,15 @@ public class AdminServerAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
+	public InstanceFilter instanceFilter() {
+		return (instance) -> true;
+	}
+
+	@Bean
+	@ConditionalOnMissingBean
 	public InstanceRegistry instanceRegistry(InstanceRepository instanceRepository,
-			InstanceIdGenerator instanceIdGenerator) {
-		return new InstanceRegistry(instanceRepository, instanceIdGenerator);
+			InstanceIdGenerator instanceIdGenerator, InstanceFilter instanceFilter) {
+		return new InstanceRegistry(instanceRepository, instanceIdGenerator, instanceFilter);
 	}
 
 	@Bean
@@ -88,16 +100,25 @@ public class AdminServerAutoConfiguration {
 	@ConditionalOnMissingBean
 	public StatusUpdater statusUpdater(InstanceRepository instanceRepository,
 			InstanceWebClient.Builder instanceWebClientBulder) {
-		return new StatusUpdater(instanceRepository, instanceWebClientBulder.build());
+		return new StatusUpdater(instanceRepository, instanceWebClientBulder.build(), new ApiMediaTypeHandler());
 	}
 
 	@Bean(initMethod = "start", destroyMethod = "stop")
 	@ConditionalOnMissingBean
 	public StatusUpdateTrigger statusUpdateTrigger(StatusUpdater statusUpdater, Publisher<InstanceEvent> events) {
-		StatusUpdateTrigger trigger = new StatusUpdateTrigger(statusUpdater, events);
-		trigger.setInterval(this.adminServerProperties.getMonitor().getStatusInterval());
-		trigger.setLifetime(this.adminServerProperties.getMonitor().getStatusLifetime());
-		return trigger;
+		AdminServerProperties.MonitorProperties monitorProperties = this.adminServerProperties.getMonitor();
+
+		Duration defaultTimeout = monitorProperties.getDefaultTimeout();
+		Duration statusInterval = monitorProperties.getStatusInterval();
+
+		if (defaultTimeout.compareTo(statusInterval) > 0) {
+			log.warn(
+					"Default timeout ({}) is larger than status interval ({}), hence status interval will be used as timeout.",
+					defaultTimeout, statusInterval);
+		}
+
+		return new StatusUpdateTrigger(statusUpdater, events, monitorProperties.getStatusInterval(),
+				monitorProperties.getStatusLifetime(), monitorProperties.getStatusMaxBackoff());
 	}
 
 	@Bean
@@ -105,7 +126,8 @@ public class AdminServerAutoConfiguration {
 	public EndpointDetector endpointDetector(InstanceRepository instanceRepository,
 			InstanceWebClient.Builder instanceWebClientBuilder) {
 		InstanceWebClient instanceWebClient = instanceWebClientBuilder.build();
-		ChainingStrategy strategy = new ChainingStrategy(new QueryIndexEndpointStrategy(instanceWebClient),
+		ChainingStrategy strategy = new ChainingStrategy(
+				new QueryIndexEndpointStrategy(instanceWebClient, new ApiMediaTypeHandler()),
 				new ProbeEndpointsStrategy(instanceWebClient, this.adminServerProperties.getProbedEndpoints()));
 		return new EndpointDetector(instanceRepository, strategy);
 	}
@@ -121,16 +143,15 @@ public class AdminServerAutoConfiguration {
 	@ConditionalOnMissingBean
 	public InfoUpdater infoUpdater(InstanceRepository instanceRepository,
 			InstanceWebClient.Builder instanceWebClientBuilder) {
-		return new InfoUpdater(instanceRepository, instanceWebClientBuilder.build());
+		return new InfoUpdater(instanceRepository, instanceWebClientBuilder.build(), new ApiMediaTypeHandler());
 	}
 
 	@Bean(initMethod = "start", destroyMethod = "stop")
 	@ConditionalOnMissingBean
 	public InfoUpdateTrigger infoUpdateTrigger(InfoUpdater infoUpdater, Publisher<InstanceEvent> events) {
-		InfoUpdateTrigger trigger = new InfoUpdateTrigger(infoUpdater, events);
-		trigger.setInterval(this.adminServerProperties.getMonitor().getInfoInterval());
-		trigger.setLifetime(this.adminServerProperties.getMonitor().getInfoLifetime());
-		return trigger;
+		return new InfoUpdateTrigger(infoUpdater, events, this.adminServerProperties.getMonitor().getInfoInterval(),
+				this.adminServerProperties.getMonitor().getInfoLifetime(),
+				this.adminServerProperties.getMonitor().getInfoMaxBackoff());
 	}
 
 	@Bean

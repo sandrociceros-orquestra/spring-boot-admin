@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2020 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,13 +17,12 @@
 package de.codecentric.boot.admin.server.web.client;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Map;
 
-import javax.annotation.Nullable;
-
 import org.springframework.http.HttpHeaders;
-import org.springframework.util.Base64Utils;
+import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 
 import de.codecentric.boot.admin.server.domain.entities.Instance;
@@ -87,7 +86,7 @@ public class BasicAuthHttpHeaderProvider implements HttpHeadersProvider {
 	}
 
 	protected String encode(String username, String password) {
-		String token = Base64Utils.encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
+		String token = base64Encode((username + ":" + password).getBytes(StandardCharsets.UTF_8));
 		return "Basic " + token;
 	}
 
@@ -100,6 +99,14 @@ public class BasicAuthHttpHeaderProvider implements HttpHeadersProvider {
 			}
 		}
 		return null;
+	}
+
+	private static String base64Encode(byte[] src) {
+		if (src.length == 0) {
+			return "";
+		}
+		byte[] dest = Base64.getEncoder().encode(src);
+		return new String(dest, StandardCharsets.UTF_8);
 	}
 
 	@lombok.Data

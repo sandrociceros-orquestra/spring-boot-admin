@@ -1,23 +1,32 @@
-import "@/assets/css/base.scss";
-import "./storybook.scss";
+import { setup } from '@storybook/vue3';
+import { initialize, mswDecorator } from 'msw-storybook-addon';
+import { createRouter, createWebHistory } from 'vue-router';
 
-import Vue from "vue/dist/vue.js";
-import components from "@/components";
-import i18n from "@/i18n";
-import VueI18n from "vue-i18n";
+import './storybook.css';
+import '@/index.css';
+
+import components from '@/components';
+import { createApplicationStore } from '@/composables/useApplicationStore';
+import i18n from '@/i18n';
+import applicationsEndpoint from '@/mocks/applications';
 import mappingsEndpoint from '@/mocks/instance/mappings';
 
-import { initialize, mswDecorator } from 'msw-storybook-addon';
-
-// Initialize MSW
 initialize();
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [],
+});
 
-Vue.use(VueI18n);
-Vue.use(components);
-
+const applicationStore = createApplicationStore();
+setup((app) => {
+  app.use(components);
+  app.use(i18n);
+  app.use(router);
+  app.use(applicationStore);
+});
 
 export const parameters = {
-  actions: {argTypesRegex: "^on[A-Z].*"},
+  actions: { argTypesRegex: '^on[A-Z].*' },
   controls: {
     matchers: {
       color: /(background|color)$/i,
@@ -27,19 +36,9 @@ export const parameters = {
   msw: {
     handlers: {
       auth: null,
-      others: [...mappingsEndpoint]
-    }
-  }
-}
+      others: [...mappingsEndpoint, ...applicationsEndpoint],
+    },
+  },
+};
 
-export const decorators = [
-  (story, context) => {
-    const wrapped = story(context)
-    return Vue.extend({
-      i18n,
-      components: {wrapped},
-      template: `
-        <wrapped/>`
-    })
-  }, mswDecorator
-]
+export const decorators = [mswDecorator];

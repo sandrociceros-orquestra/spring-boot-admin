@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2019 the original author or authors.
+ * Copyright 2014-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,11 +22,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.Nullable;
-
+import lombok.Data;
+import lombok.Getter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.convert.DurationUnit;
 import org.springframework.http.CacheControl;
+import org.springframework.lang.Nullable;
 
 import de.codecentric.boot.admin.server.ui.web.UiController;
 
@@ -120,6 +121,24 @@ public class AdminServerUiProperties {
 
 	private PollTimer pollTimer = new PollTimer();
 
+	/**
+	 * Additional routes to exclude from home page redirecting filter. Requests to these
+	 * routes will not redirected to home page
+	 */
+	private List<String> additionalRouteExcludes = new ArrayList<>();
+
+	/**
+	 * Allows to enable toast notifications in SBA.
+	 */
+	private Boolean enableToasts = false;
+
+	/**
+	 * Show or hide URL of instances.
+	 */
+	private Boolean hideInstanceUrl = false;
+
+	private UiTheme theme = new UiTheme();
+
 	@lombok.Data
 	public static class PollTimer {
 
@@ -152,6 +171,11 @@ public class AdminServerUiProperties {
 		 * Time in milliseconds to refresh data in threads view.
 		 */
 		private int threads = 2500;
+
+		/**
+		 * Time in milliseconds to refresh data in logfile view.
+		 */
+		private int logfile = 1000;
 
 	}
 
@@ -186,6 +210,89 @@ public class AdminServerUiProperties {
 				return CacheControl.maxAge(this.maxAge.getSeconds(), TimeUnit.SECONDS);
 			}
 			return CacheControl.empty();
+		}
+
+	}
+
+	@Data
+	public static class UiTheme {
+
+		private Boolean backgroundEnabled = true;
+
+		private Palette palette = new Palette();
+
+		private String color = "#14615A";
+
+	}
+
+	/**
+	 * Color shades are based on Tailwind's color palettes:
+	 * https://tailwindcss.com/docs/customizing-colors
+	 *
+	 * name shade number mainColorLighter 50 mainColorLight 300 mainColor 500
+	 * mainColorDark 700 mainColorDarker 800
+	 */
+	@Getter
+	public static class Palette {
+
+		private String shade50 = "#EEFCFA";
+
+		private String shade100 = "#D9F7F4";
+
+		private String shade200 = "#B7F0EA";
+
+		private String shade300 = "#91E8E0";
+
+		private String shade400 = "#6BE0D5";
+
+		private String shade500 = "#47D9CB";
+
+		private String shade600 = "#27BEAF";
+
+		private String shade700 = "#1E9084";
+
+		private String shade800 = "#14615A";
+
+		private String shade900 = "#0A2F2B";
+
+		public void set50(String shade50) {
+			this.shade50 = shade50;
+		}
+
+		public void set100(String shade100) {
+			this.shade100 = shade100;
+		}
+
+		public void set200(String shade200) {
+			this.shade200 = shade200;
+		}
+
+		public void set300(String shade300) {
+			this.shade300 = shade300;
+		}
+
+		public void set400(String shade400) {
+			this.shade400 = shade400;
+		}
+
+		public void set500(String shade500) {
+			this.shade500 = shade500;
+		}
+
+		public void set600(String shade600) {
+			this.shade600 = shade600;
+		}
+
+		public void set700(String shade700) {
+			this.shade700 = shade700;
+		}
+
+		public void set800(String shade800) {
+			this.shade800 = shade800;
+		}
+
+		public void set900(String shade900) {
+			this.shade900 = shade900;
 		}
 
 	}

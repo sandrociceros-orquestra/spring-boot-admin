@@ -8,7 +8,11 @@ spring:
       host: localhost
       port: 8500
       discovery:
-        tags: management.context-path=/foo, health.path=/ping, user.name=user, user.password=password
+        metadata:
+          management-context-path: /foo
+          health-path: /ping
+          user-name: user
+          user-password: password
   profiles:
     active:
       - secure
@@ -29,16 +33,3 @@ management:
   endpoint:
     health:
       show-details: ALWAYS
-
----
-spring:
-  profiles: insecure
-
----
-spring:
-  profiles: secure
-  security:
-    user:
-      name: "user"
-      password: "password"
-

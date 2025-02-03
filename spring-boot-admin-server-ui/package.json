@@ -3,174 +3,129 @@
   "private": true,
   "description": "Spring Boot Admin UI",
   "scripts": {
-    "build": "vue-cli-service build",
-    "test:unit": "vue-cli-service test:unit",
-    "lint": "vue-cli-service lint",
-    "lint:fix": "vue-cli-service lint --fix",
-    "watch": "vue-cli-service build --watch",
-    "storybook": "start-storybook -p 6006 -s public",
-    "build-storybook": "build-storybook"
-  },
-  "engines": {
-    "node": "~15",
-    "npm": "~7"
+    "build": "vite build --emptyOutDir --sourcemap",
+    "build:dev": "NODE_ENV=development vite build --emptyOutDir --sourcemap --mode development",
+    "build:watch": "NODE_ENV=development vite build --emptyOutDir --sourcemap --watch --mode development",
+    "dev": "vite",
+    "test": "vitest run --silent",
+    "test:watch": "vitest",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "lint": "eslint --ext .js,.ts,.vue src/main/frontend",
+    "lint:fix": "eslint --ext .js,.ts,.vue --fix src/main/frontend",
+    "format": "prettier src/main/frontend",
+    "format:fix": "prettier src/main/frontend --write"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "1.2.36",
-    "@fortawesome/free-brands-svg-icons": "5.15.4",
-    "@fortawesome/free-regular-svg-icons": "5.15.4",
-    "@fortawesome/free-solid-svg-icons": "5.15.4",
-    "@fortawesome/vue-fontawesome": "2.0.2",
-    "ansi_up": "5.0.1",
-    "autolinker": "3.14.3",
-    "axios": "0.21.4",
-    "bulma": "0.9.3",
-    "bulma-badge": "3.0.1",
-    "core-js": "3.17.3",
-    "d3-array": "2.12.1",
-    "d3-axis": "2.1.0",
-    "d3-brush": "2.1.0",
-    "d3-scale": "3.3.0",
-    "d3-selection": "2.0.0",
-    "d3-shape": "2.1.0",
-    "d3-time": "2.1.1",
-    "event-source-polyfill": "1.0.25",
+    "@fortawesome/fontawesome-svg-core": "6.7.2",
+    "@fortawesome/free-brands-svg-icons": "6.7.2",
+    "@fortawesome/free-regular-svg-icons": "6.7.2",
+    "@fortawesome/free-solid-svg-icons": "6.7.2",
+    "@fortawesome/vue-fontawesome": "3.0.8",
+    "@headlessui/vue": "1.7.23",
+    "@stekoe/vue-toast-notificationcenter": "https://github.com/SteKoe/vue-toast-notificationcenter/archive/refs/tags/1.0.0-RC5.tar.gz",
+    "@tailwindcss/forms": "0.5.10",
+    "@tailwindcss/typography": "0.5.16",
+    "ansi_up": "6.0.2",
+    "autolinker": "4.1.0",
+    "axios": "1.7.9",
+    "chart.js": "4.4.7",
+    "chartjs-adapter-moment": "1.0.1",
+    "classnames": "2.5.1",
+    "d3": "^7.9.0",
+    "d3-array": "3.2.4",
+    "d3-axis": "3.0.0",
+    "d3-brush": "3.0.0",
+    "d3-scale": "4.0.2",
+    "d3-selection": "3.0.0",
+    "d3-shape": "3.2.0",
+    "d3-time": "3.1.0",
+    "event-source-polyfill": "1.0.31",
     "file-saver": "2.0.5",
-    "iso8601-duration": "1.3.0",
-    "lodash": "4.17.21",
-    "moment": "2.29.1",
+    "fuse.js": "^7.0.0",
+    "iso8601-duration": "2.1.2",
+    "lodash-es": "4.17.21",
+    "mitt": "^3.0.0",
+    "moment": "2.30.1",
     "popper.js": "1.16.1",
-    "pretty-bytes": "5.6.0",
+    "pretty-bytes": "6.1.1",
+    "qs": "^6.13.0",
+    "random-string": "0.2.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "resize-observer-polyfill": "1.5.1",
-    "rxjs": "6.6.7",
-    "vue": "2.6.14",
-    "vue-clickaway2": "2.3.2",
-    "vue-i18n": "8.25.1",
-    "vue-infinite-loading": "2.4.5",
-    "vue-router": "3.5.2"
+    "rxjs": "7.8.1",
+    "uuid": "11.0.5",
+    "v3-infinite-loading": "1.3.2",
+    "vue": "3.5.13",
+    "vue-i18n": "11.1.0",
+    "vue-router": "4.5.0",
+    "vue3-click-away": "1.2.4"
   },
   "devDependencies": {
-    "@babel/plugin-proposal-optional-catch-binding": "7.14.5",
-    "@babel/plugin-proposal-optional-chaining": "7.14.5",
-    "@storybook/addon-actions": "6.3.8",
-    "@storybook/addon-essentials": "6.3.8",
-    "@storybook/addon-links": "6.3.8",
-    "@storybook/addon-postcss": "2.0.0",
-    "@storybook/preset-scss": "1.0.3",
-    "@storybook/vue": "6.3.8",
-    "@testing-library/jest-dom": "5.14.1",
-    "@testing-library/user-event": "13.2.1",
-    "@testing-library/vue": "5.8.2",
-    "@vue/cli-plugin-babel": "4.5.13",
-    "@vue/cli-plugin-eslint": "4.5.13",
-    "@vue/cli-plugin-unit-jest": "4.5.13",
-    "@vue/cli-service": "4.5.13",
-    "@vue/eslint-config-standard": "4.0.0",
-    "@vue/test-utils": "1.2.2",
-    "babel-core": "7.0.0-bridge.0",
-    "babel-eslint": "10.1.0",
-    "babel-jest": "26.6.3",
-    "babel-loader": "8.2.2",
-    "babel-plugin-require-context-hook": "1.0.0",
-    "babel-plugin-transform-require-context": "0.1.1",
-    "css-loader": "3.6.0",
-    "eslint": "6.8.0",
-    "eslint-plugin-vue": "6.2.2",
-    "html-loader": "1.3.2",
-    "jest": "26.6.3",
-    "jest-each": "26.6.2",
-    "jest-environment-jsdom-sixteen": "2.0.0",
-    "msw": "0.35.0",
-    "msw-storybook-addon": "1.5.0",
-    "node-sass": "6.0.1",
-    "sass-loader": "10.2.0",
-    "style-loader": "1.3.0",
-    "vue-loader": "15.9.8",
-    "vue-template-compiler": "2.6.14",
-    "webpack-bundle-analyzer": "3.9.0"
-  },
-  "eslintConfig": {
-    "root": true,
-    "env": {
-      "node": true
-    },
-    "extends": [
-      "eslint:recommended",
-      "plugin:vue/strongly-recommended"
-    ],
-    "rules": {
-      "quotes": [
-        "error",
-        "single"
-      ],
-      "no-console": [
-        "error",
-        {
-          "allow": [
-            "warn"
-          ]
-        }
-      ],
-      "vue/max-attributes-per-line": "off",
-      "vue/component-name-in-template-casing": [
-        "error",
-        "kebab-case"
-      ]
-    },
-    "parserOptions": {
-      "parser": "babel-eslint"
-    },
-    "overrides": [
-      {
-        "files": [
-          "*.spec.js"
-        ],
-        "env": {
-          "jest": true
-        }
-      }
-    ]
-  },
-  "postcss": {
-    "plugins": {
-      "autoprefixer": {}
-    }
+    "@babel/core": "7.26.7",
+    "@babel/eslint-parser": "7.26.5",
+    "@babel/plugin-transform-runtime": "7.25.9",
+    "@babel/preset-env": "7.26.7",
+    "@babel/runtime": "7.26.7",
+    "@storybook/addon-actions": "8.5.3",
+    "@storybook/addon-essentials": "8.5.3",
+    "@storybook/addon-links": "8.5.3",
+    "@storybook/addon-mdx-gfm": "^8.0.0",
+    "@storybook/vue3": "8.5.3",
+    "@storybook/vue3-vite": "^8.0.0",
+    "@testing-library/jest-dom": "6.6.3",
+    "@testing-library/user-event": "14.6.1",
+    "@testing-library/vue": "8.1.0",
+    "@trivago/prettier-plugin-sort-imports": "^4.2.0",
+    "@types/d3": "^7.4.3",
+    "@types/lodash-es": "^4.17.7",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vitejs/plugin-vue": "5.2.1",
+    "@vue/eslint-config-typescript": "^14.0.0",
+    "@vue/test-utils": "2.4.6",
+    "autoprefixer": "10.4.20",
+    "babel-loader": "9.2.1",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^10.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-storybook": "0.11.2",
+    "eslint-plugin-vue": "^9.10.0",
+    "happy-dom": "^14.12.3",
+    "jsdom": "^26.0.0",
+    "msw": "2.7.0",
+    "msw-storybook-addon": "2.0.4",
+    "postcss": "8.5.1",
+    "prettier": "^3.0.3",
+    "rollup-plugin-visualizer": "5.14.0",
+    "sass": "^1.57.1",
+    "storybook": "8.5.3",
+    "tailwindcss": "3.4.17",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.0.3",
+    "vite": "6.0.11",
+    "vite-plugin-static-copy": "2.2.0",
+    "vitest": "3.0.5",
+    "vue-eslint-parser": "^9.1.0",
+    "vue-loader": "17.4.2"
   },
   "browserslist": [
     "> 1%",
     "last 2 versions",
     "not ie <= 8"
   ],
-  "jest": {
-    "setupFiles": [
-      "<rootDir>/.jest/register-context.js"
-    ],
-    "setupFilesAfterEnv": [
-      "<rootDir>/.jest/jest.setup.js"
-    ],
-    "testEnvironment": "jest-environment-jsdom-sixteen",
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "vue"
-    ],
-    "transform": {
-      ".+\\.vue$": "vue-jest",
-      ".+\\.(css|styl|less|sass|scss|svg|png|jpg|ttf|woff|woff2)$": "jest-transform-stub",
-      ".+\\.js$": "babel-jest"
-    },
-    "moduleNameMapper": {
-      "@/(.*)$": "<rootDir>/src/main/frontend/$1"
-    },
-    "snapshotSerializers": [
-      "jest-serializer-vue"
-    ],
-    "testMatch": [
-      "**/*.spec.js"
-    ],
-    "testURL": "http://example.com"
+  "engines": {
+    "node": "22.13.1",
+    "npm": "11.1.0"
   },
   "msw": {
-    "workerDirectory": "public"
+    "workerDirectory": [
+      "./src/main/frontend/public",
+      "src/main/frontend/public"
+    ]
+  },
+  "overrides": {
+    "esbuild": "0.24.2"
   }
 }

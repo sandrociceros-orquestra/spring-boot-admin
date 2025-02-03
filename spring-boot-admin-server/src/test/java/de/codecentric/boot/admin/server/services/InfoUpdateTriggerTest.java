@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2019 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,7 +48,7 @@ import static org.mockito.Mockito.when;
 public class InfoUpdateTriggerTest {
 
 	private final Instance instance = Instance.create(InstanceId.of("id-1"))
-			.register(Registration.create("foo", "http://health-1").build());
+		.register(Registration.create("foo", "http://health-1").build());
 
 	private final InfoUpdater updater = mock(InfoUpdater.class);
 
@@ -60,7 +60,8 @@ public class InfoUpdateTriggerTest {
 	public void setUp() throws Exception {
 		when(this.updater.updateInfo(any(InstanceId.class))).thenReturn(Mono.empty());
 
-		this.trigger = new InfoUpdateTrigger(this.updater, this.events.flux());
+		this.trigger = new InfoUpdateTrigger(this.updater, this.events.flux(), Duration.ofMinutes(5),
+				Duration.ofMinutes(1), Duration.ofMinutes(10));
 		this.trigger.start();
 		await().until(this.events::wasSubscribed);
 	}
@@ -151,12 +152,12 @@ public class InfoUpdateTriggerTest {
 	public void should_continue_update_after_error() throws InterruptedException {
 		// when status-change event is emitted and an error is emitted
 		when(this.updater.updateInfo(any())).thenReturn(Mono.error(IllegalStateException::new))
-				.thenReturn(Mono.empty());
+			.thenReturn(Mono.empty());
 
 		this.events.next(
 				new InstanceStatusChangedEvent(this.instance.getId(), this.instance.getVersion(), StatusInfo.ofDown()));
-		this.events.next(
-				new InstanceStatusChangedEvent(this.instance.getId(), this.instance.getVersion(), StatusInfo.ofUp()));
+		this.events
+			.next(new InstanceStatusChangedEvent(this.instance.getId(), this.instance.getVersion(), StatusInfo.ofUp()));
 
 		// then should update
 		verify(this.updater, times(2)).updateInfo(this.instance.getId());

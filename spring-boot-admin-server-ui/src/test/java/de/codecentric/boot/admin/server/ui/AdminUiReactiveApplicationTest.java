@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2020 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,6 +25,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
@@ -38,10 +39,11 @@ public class AdminUiReactiveApplicationTest extends AbstractAdminUiApplicationTe
 
 	@BeforeAll
 	public static void setUp() {
-		instance = new SpringApplicationBuilder().sources(TestAdminApplication.class).web(WebApplicationType.REACTIVE)
-				.run("--server.port=0",
-						"--spring.boot.admin.ui.extension-resource-locations=classpath:/META-INF/test-extensions/",
-						"--spring.boot.admin.ui.available-languages=de");
+		instance = new SpringApplicationBuilder().sources(TestAdminApplication.class)
+			.web(WebApplicationType.REACTIVE)
+			.run("--server.port=0",
+					"--spring.boot.admin.ui.extension-resource-locations=classpath:/META-INF/test-extensions/",
+					"--spring.boot.admin.ui.available-languages=de");
 
 		port = instance.getEnvironment().getProperty("local.server.port", Integer.class, 0);
 	}
@@ -56,6 +58,11 @@ public class AdminUiReactiveApplicationTest extends AbstractAdminUiApplicationTe
 		super.setUp(port);
 	}
 
+	@Override
+	MediaType getExpectedMediaTypeForJavaScript() {
+		return MediaType.parseMediaType("application/javascript");
+	}
+
 	@EnableAdminServer
 	@EnableAutoConfiguration
 	@SpringBootConfiguration
@@ -63,7 +70,9 @@ public class AdminUiReactiveApplicationTest extends AbstractAdminUiApplicationTe
 
 		@Bean
 		public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
-			return http.authorizeExchange().anyExchange().permitAll().and().csrf().disable().build();
+			return http.authorizeExchange((authorizeExchange) -> authorizeExchange.anyExchange().permitAll())
+				.csrf(ServerHttpSecurity.CsrfSpec::disable)
+				.build();
 		}
 
 	}

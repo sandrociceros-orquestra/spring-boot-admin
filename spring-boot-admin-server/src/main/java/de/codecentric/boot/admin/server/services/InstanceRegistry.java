@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2018 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,8 +27,8 @@ import de.codecentric.boot.admin.server.domain.values.Registration;
 
 /**
  * Registry for all application instances that should be managed/administrated by the
- * Spring Boot Admin server. Backed by an InstanceRepository for persistence and an
- * InstanceIdGenerator for id generation.
+ * Spring Boot Admin server. Backed by an InstanceRepository for persistence, an
+ * InstanceIdGenerator for id generation and InstanceFilter for instance filtering.
  */
 public class InstanceRegistry {
 
@@ -36,9 +36,12 @@ public class InstanceRegistry {
 
 	private final InstanceIdGenerator generator;
 
-	public InstanceRegistry(InstanceRepository repository, InstanceIdGenerator generator) {
+	private final InstanceFilter filter;
+
+	public InstanceRegistry(InstanceRepository repository, InstanceIdGenerator generator, InstanceFilter filter) {
 		this.repository = repository;
 		this.generator = generator;
+		this.filter = filter;
 	}
 
 	/**
@@ -59,20 +62,20 @@ public class InstanceRegistry {
 	}
 
 	/**
-	 * Get a list of all registered instances.
-	 * @return list of all instances.
+	 * Get a list of all registered instances that satisfy the filter.
+	 * @return list of all instances satisfying the filter.
 	 */
 	public Flux<Instance> getInstances() {
-		return repository.findAll();
+		return repository.findAll().filter(filter::filter);
 	}
 
 	/**
-	 * Get a list of all registered application instances.
+	 * Get a list of all registered application instances that satisfy the filter.
 	 * @param name the name to search for.
-	 * @return list of instances for the given application
+	 * @return list of instances for the given application that satisfy the filter.
 	 */
 	public Flux<Instance> getInstances(String name) {
-		return repository.findByName(name);
+		return repository.findByName(name).filter(filter::filter);
 	}
 
 	/**
@@ -81,7 +84,7 @@ public class InstanceRegistry {
 	 * @return a Mono with the Instance.
 	 */
 	public Mono<Instance> getInstance(InstanceId id) {
-		return repository.find(id);
+		return repository.find(id).filter(filter::filter);
 	}
 
 	/**
@@ -91,7 +94,7 @@ public class InstanceRegistry {
 	 */
 	public Mono<InstanceId> deregister(InstanceId id) {
 		return repository.computeIfPresent(id, (key, instance) -> Mono.just(instance.deregister()))
-				.map(Instance::getId);
+			.map(Instance::getId);
 	}
 
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2020 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -43,6 +43,8 @@ import de.codecentric.boot.admin.server.web.client.LegacyEndpointConverters;
 import de.codecentric.boot.admin.server.web.client.cookies.CookieStoreCleanupTrigger;
 import de.codecentric.boot.admin.server.web.client.cookies.JdkPerInstanceCookieStore;
 import de.codecentric.boot.admin.server.web.client.cookies.PerInstanceCookieStore;
+import de.codecentric.boot.admin.server.web.client.reactive.CompositeReactiveHttpHeadersProvider;
+import de.codecentric.boot.admin.server.web.client.reactive.ReactiveHttpHeadersProvider;
 
 @Configuration(proxyBeanMethods = false)
 @Lazy(false)
@@ -84,6 +86,16 @@ public class AdminServerInstanceWebClientConfiguration {
 			public InstanceExchangeFilterFunction addHeadersInstanceExchangeFilter(
 					List<HttpHeadersProvider> headersProviders) {
 				return InstanceExchangeFilterFunctions.addHeaders(new CompositeHttpHeadersProvider(headersProviders));
+			}
+
+			@Bean
+			@Order(0)
+			@ConditionalOnBean(ReactiveHttpHeadersProvider.class)
+			@ConditionalOnMissingBean(name = "addReactiveHeadersInstanceExchangeFilter")
+			public InstanceExchangeFilterFunction addReactiveHeadersInstanceExchangeFilter(
+					List<ReactiveHttpHeadersProvider> reactiveHeadersProviders) {
+				return InstanceExchangeFilterFunctions
+					.addHeadersReactive(new CompositeReactiveHttpHeadersProvider(reactiveHeadersProviders));
 			}
 
 			@Bean

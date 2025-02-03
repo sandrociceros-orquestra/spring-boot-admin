@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2019 the original author or authors.
+ * Copyright 2014-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,6 +21,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.accept.ContentNegotiationManager;
@@ -56,8 +57,9 @@ public class AdminServerWebConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public ApplicationsController applicationsController(ApplicationRegistry applicationRegistry) {
-		return new ApplicationsController(applicationRegistry);
+	public ApplicationsController applicationsController(ApplicationRegistry applicationRegistry,
+			ApplicationEventPublisher applicationEventPublisher) {
+		return new ApplicationsController(applicationRegistry, applicationEventPublisher);
 	}
 
 	@Configuration(proxyBeanMethods = false)
@@ -95,11 +97,11 @@ public class AdminServerWebConfiguration {
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 	@AutoConfigureAfter(WebMvcAutoConfiguration.class)
-	public static class ServletRestApiConfirguation {
+	public static class ServletRestApiConfiguration {
 
 		private final AdminServerProperties adminServerProperties;
 
-		public ServletRestApiConfirguation(AdminServerProperties adminServerProperties) {
+		public ServletRestApiConfiguration(AdminServerProperties adminServerProperties) {
 			this.adminServerProperties = adminServerProperties;
 		}
 

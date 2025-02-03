@@ -15,65 +15,50 @@
   -->
 
 <template>
-  <div class="field is-narrow">
-    <div class="control">
-      <button
-        v-if="scope === 'application'"
-        class="button is-primary is-active"
-        @click="toggleScope('instance')"
-      >
-        <font-awesome-icon icon="cubes" />&nbsp;
-        <span v-text="$t('term.application')" />
-      </button>
-      <button
-        v-else
-        class="button"
-        @click="toggleScope('application')"
-      >
-        <font-awesome-icon icon="cube" />&nbsp;&nbsp;
-        <span v-text="$t('term.instance')" />
-      </button>
-    </div>
-    <p class="help has-text-centered">
-      <span v-if="scope === 'application'"
-            v-text="$t('term.affects_all_instances', {count: instanceCount})"
+  <div class="flex">
+    <sba-button
+      v-if="instanceCount <= 1 || modelValue === ActionScope.APPLICATION"
+      :class="classNames"
+      :title="$t('term.affects_all_instances', { count: instanceCount })"
+      class="w-full"
+      size="sm"
+      @click="() => (modelValue = ActionScope.INSTANCE)"
+    >
+      <span v-text="$t('term.application')" />
+    </sba-button>
+    <sba-button
+      v-else
+      :class="classNames"
+      :title="$t('term.affects_this_instance_only')"
+      class="w-full"
+      size="sm"
+      @click="() => (modelValue = ActionScope.APPLICATION)"
+    >
+      <span v-text="$t('term.instance')" />
+    </sba-button>
+
+    <p v-if="showInfo" class="text-center text-xs pt-1 truncate">
+      <span
+        v-if="modelValue === ActionScope.APPLICATION"
+        v-text="$t('term.affects_all_instances', { count: instanceCount })"
       />
       <span v-else v-text="$t('term.affects_this_instance_only')" />
     </p>
   </div>
 </template>
 
-<script>
-export default {
-  model: {
-    prop: 'scope',
-    event: 'changeScope'
-  },
-  props: {
-    scope: {
-      type: String,
-      required: true
-    },
-    instanceCount: {
-      type: Number,
-      required: true
-    }
-  },
-  data() {
-    return {
-      selectedScope: 'instance'
-    }
-  },
-  methods: {
-    toggleScope(newScope) {
-      this.$emit('changeScope', newScope)
-    }
-  }
-}
-</script>
+<script lang="ts" setup>
+import { ActionScope } from '@/components/ActionScope';
+import SbaButton from '@/components/sba-button.vue';
 
-<style scoped>
-.button {
-  width: 100%;
-}
-</style>
+const modelValue = defineModel({
+  type: String,
+  default: ActionScope.APPLICATION,
+});
+
+const { instanceCount, showInfo = true } = defineProps<{
+  instanceCount: number;
+  showInfo: boolean;
+  classNames?: string | string[] | Record<string, boolean>;
+}>();
+</script>

@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2019 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,7 +41,7 @@ public class IntervalCheckTest {
 	private final Function<InstanceId, Mono<Void>> checkFn = mock(Function.class, (i) -> Mono.empty());
 
 	private final IntervalCheck intervalCheck = new IntervalCheck("test", this.checkFn, Duration.ofMillis(10),
-			Duration.ofMillis(10));
+			Duration.ofMillis(10), Duration.ofSeconds(1));
 
 	@Test
 	public void should_check_after_being_started() throws InterruptedException {
@@ -82,13 +82,27 @@ public class IntervalCheckTest {
 	}
 
 	@Test
+	public void should_not_wait_longer_than_maxBackoff() throws InterruptedException {
+		this.intervalCheck.setInterval(Duration.ofMillis(10));
+		this.intervalCheck.setMinRetention(Duration.ofMillis(10));
+		this.intervalCheck.setMaxBackoff(Duration.ofSeconds(2));
+		this.intervalCheck.markAsChecked(INSTANCE_ID);
+
+		when(this.checkFn.apply(any())).thenReturn(Mono.error(new RuntimeException("Test")));
+
+		this.intervalCheck.start();
+		Thread.sleep(1000 * 10);
+		verify(this.checkFn, atLeast(7)).apply(INSTANCE_ID);
+	}
+
+	@Test
 	public void should_check_after_error() throws InterruptedException {
 		this.intervalCheck.markAsChecked(INSTANCE_ID);
 
 		when(this.checkFn.apply(any())).thenReturn(Mono.error(new RuntimeException("Test"))).thenReturn(Mono.empty());
 
 		this.intervalCheck.start();
-		Thread.sleep(100);
+		Thread.sleep(1500);
 		verify(this.checkFn, atLeast(2)).apply(InstanceId.of("Test"));
 	}
 

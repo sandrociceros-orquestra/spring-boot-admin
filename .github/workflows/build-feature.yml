@@ -6,38 +6,38 @@ on:
       - master
       - 1.*
       - 2.*
+  pull_request:
 
 jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-2016]
+        os: [ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
     steps:
 
-      - uses: actions/checkout@v2
+      - name: free disk space
+        continue-on-error: true
+        run: |
+          df -h
+          sudo swapoff -a
+          sudo rm -f /swapfile
+          sudo apt clean
+          docker rmi $(docker image ls -aq)
+          df -h
 
-      - name: Set up JDK 1.8
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'adopt'
-          java-version: '8'
+      - uses: actions/checkout@v4
 
-      - name: Cache local Maven repository
-        uses: actions/cache@v2.1.6
-        env:
-          cache-name: cache-mvn
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
 
       - name: Cache node modules
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         env:
           cache-name: cache-node-modules
         with:
@@ -50,10 +50,8 @@ jobs:
       # otherwise the build will fail https://stackoverflow.com/questions/38051787/maven-javadoc-skip-true-throws-an-error
       - name: Build with Maven
         run: |
-          mvn -B spring-javaformat:apply --no-transfer-progress
           mvn -B verify -P coverage --no-transfer-progress -D maven.javadoc.skip=true
 
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v5
         with:
-          file: ./**/target/site/jacoco/jacoco.xml
-          name: codecov
+          files: "'*/jacoco.xml'"

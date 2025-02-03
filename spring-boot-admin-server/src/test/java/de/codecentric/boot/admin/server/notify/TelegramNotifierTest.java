@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2018 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,7 +45,7 @@ import static org.mockito.Mockito.when;
 public class TelegramNotifierTest {
 
 	private final Instance instance = Instance.create(InstanceId.of("-id-"))
-			.register(Registration.create("Telegram", "http://health").build());
+		.register(Registration.create("Telegram", "http://health").build());
 
 	private InstanceRepository repository;
 
@@ -70,15 +70,15 @@ public class TelegramNotifierTest {
 	@Test
 	public void test_onApplicationEvent_resolve() {
 		StepVerifier
-				.create(notifier.notify(
-						new InstanceStatusChangedEvent(instance.getId(), instance.getVersion(), StatusInfo.ofDown())))
-				.verifyComplete();
+			.create(notifier
+				.notify(new InstanceStatusChangedEvent(instance.getId(), instance.getVersion(), StatusInfo.ofDown())))
+			.verifyComplete();
 		clearInvocations(restTemplate);
 
 		StepVerifier
-				.create(notifier.notify(
-						new InstanceStatusChangedEvent(instance.getId(), instance.getVersion(), StatusInfo.ofUp())))
-				.verifyComplete();
+			.create(notifier
+				.notify(new InstanceStatusChangedEvent(instance.getId(), instance.getVersion(), StatusInfo.ofUp())))
+			.verifyComplete();
 
 		verify(restTemplate).getForObject(
 				eq("https://telegram.com/bot--token-/sendmessage?chat_id={chat_id}&text={text}"
@@ -92,19 +92,18 @@ public class TelegramNotifierTest {
 
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<HttpEntity<Map<String, Object>>> httpRequest = ArgumentCaptor
-				.forClass((Class<HttpEntity<Map<String, Object>>>) (Class<?>) HttpEntity.class);
+			.forClass((Class<HttpEntity<Map<String, Object>>>) (Class<?>) HttpEntity.class);
 
 		when(restTemplate.postForEntity(isA(String.class), httpRequest.capture(), eq(Void.class)))
-				.thenReturn(ResponseEntity.ok().build());
+			.thenReturn(ResponseEntity.ok().build());
 
 		StepVerifier
-				.create(notifier.notify(
-						new InstanceStatusChangedEvent(instance.getId(), instance.getVersion(), StatusInfo.ofUp())))
-				.verifyComplete();
+			.create(notifier
+				.notify(new InstanceStatusChangedEvent(instance.getId(), instance.getVersion(), StatusInfo.ofUp())))
+			.verifyComplete();
 		StepVerifier
-				.create(notifier
-						.notify(new InstanceStatusChangedEvent(instance.getId(), instance.getVersion(), infoDown)))
-				.verifyComplete();
+			.create(notifier.notify(new InstanceStatusChangedEvent(instance.getId(), instance.getVersion(), infoDown)))
+			.verifyComplete();
 
 		verify(restTemplate).getForObject(
 				eq("https://telegram.com/bot--token-/sendmessage?chat_id={chat_id}&text={text}"

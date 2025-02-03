@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2020 the original author or authors.
+ * Copyright 2014-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,12 +19,12 @@ package de.codecentric.boot.admin.server.config;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.hc.client5.http.auth.AuthScope;
+import org.apache.hc.client5.http.auth.Credentials;
+import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
+import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.core5.http.HttpHost;
 import org.reactivestreams.Publisher;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -47,15 +47,16 @@ import org.springframework.mail.MailSender;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.web.client.RestTemplate;
 import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.spring5.SpringTemplateEngine;
-import org.thymeleaf.spring5.templateresolver.SpringResourceTemplateResolver;
+import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 import de.codecentric.boot.admin.server.domain.entities.InstanceRepository;
 import de.codecentric.boot.admin.server.domain.events.InstanceEvent;
 import de.codecentric.boot.admin.server.notify.CompositeNotifier;
 import de.codecentric.boot.admin.server.notify.DingTalkNotifier;
 import de.codecentric.boot.admin.server.notify.DiscordNotifier;
+import de.codecentric.boot.admin.server.notify.FeiShuNotifier;
 import de.codecentric.boot.admin.server.notify.HipchatNotifier;
 import de.codecentric.boot.admin.server.notify.LetsChatNotifier;
 import de.codecentric.boot.admin.server.notify.MailNotifier;
@@ -65,8 +66,10 @@ import de.codecentric.boot.admin.server.notify.Notifier;
 import de.codecentric.boot.admin.server.notify.NotifierProxyProperties;
 import de.codecentric.boot.admin.server.notify.OpsGenieNotifier;
 import de.codecentric.boot.admin.server.notify.PagerdutyNotifier;
+import de.codecentric.boot.admin.server.notify.RocketChatNotifier;
 import de.codecentric.boot.admin.server.notify.SlackNotifier;
 import de.codecentric.boot.admin.server.notify.TelegramNotifier;
+import de.codecentric.boot.admin.server.notify.WebexNotifier;
 import de.codecentric.boot.admin.server.notify.filter.FilteringNotifier;
 import de.codecentric.boot.admin.server.notify.filter.web.NotificationFilterController;
 
@@ -82,9 +85,12 @@ public class AdminServerNotifierAutoConfiguration {
 			builder.setProxy(new HttpHost(proxyProperties.getHost(), proxyProperties.getPort()));
 
 			if (proxyProperties.getUsername() != null && proxyProperties.getPassword() != null) {
-				CredentialsProvider credsProvider = new BasicCredentialsProvider();
-				credsProvider.setCredentials(new AuthScope(proxyProperties.getHost(), proxyProperties.getPort()),
-						new UsernamePasswordCredentials(proxyProperties.getUsername(), proxyProperties.getPassword()));
+				AuthScope authScope = new AuthScope(proxyProperties.getHost(), proxyProperties.getPort());
+				Credentials usernamePasswordCredentials = new UsernamePasswordCredentials(proxyProperties.getUsername(),
+						proxyProperties.getPassword().toCharArray());
+
+				BasicCredentialsProvider credsProvider = new BasicCredentialsProvider();
+				credsProvider.setCredentials(authScope, usernamePasswordCredentials);
 				builder.setDefaultCredentialsProvider(credsProvider);
 			}
 
@@ -174,13 +180,12 @@ public class AdminServerNotifierAutoConfiguration {
 
 		@Bean
 		public TemplateEngine mailNotifierTemplateEngine() {
-			SpringResourceTemplateResolver resolver = new SpringResourceTemplateResolver();
-			resolver.setApplicationContext(this.applicationContext);
+			ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
 			resolver.setTemplateMode(TemplateMode.HTML);
 			resolver.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
 			SpringTemplateEngine templateEngine = new SpringTemplateEngine();
-			templateEngine.addTemplateResolver(resolver);
+			templateEngine.setTemplateResolver(resolver);
 			return templateEngine;
 		}
 
@@ -323,6 +328,52 @@ public class AdminServerNotifierAutoConfiguration {
 		public DingTalkNotifier dingTalkNotifier(InstanceRepository repository,
 				NotifierProxyProperties proxyProperties) {
 			return new DingTalkNotifier(repository, createNotifierRestTemplate(proxyProperties));
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnProperty(prefix = "spring.boot.admin.notify.rocketchat", name = "url")
+	@AutoConfigureBefore({ NotifierTriggerConfiguration.class, CompositeNotifierConfiguration.class })
+	@Lazy(false)
+	public static class RocketChatNotifierConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean
+		@ConfigurationProperties("spring.boot.admin.notify.rocketchat")
+		public RocketChatNotifier rocketChatNotifier(InstanceRepository repository,
+				NotifierProxyProperties proxyProperties) {
+			return new RocketChatNotifier(repository, createNotifierRestTemplate(proxyProperties));
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnProperty(prefix = "spring.boot.admin.notify.feishu", name = "webhook-url")
+	@AutoConfigureBefore({ NotifierTriggerConfiguration.class, CompositeNotifierConfiguration.class })
+	@Lazy(false)
+	public static class FeiShuNotifierConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean
+		@ConfigurationProperties("spring.boot.admin.notify.feishu")
+		public FeiShuNotifier feiShuNotifier(InstanceRepository repository, NotifierProxyProperties proxyProperties) {
+			return new FeiShuNotifier(repository, createNotifierRestTemplate(proxyProperties));
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnProperty(prefix = "spring.boot.admin.notify.webex", name = "auth-token")
+	@AutoConfigureBefore({ NotifierTriggerConfiguration.class, CompositeNotifierConfiguration.class })
+	@Lazy(false)
+	public static class WebexNotifierConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean
+		@ConfigurationProperties("spring.boot.admin.notify.webex")
+		public WebexNotifier webexNotifier(InstanceRepository repository, NotifierProxyProperties proxyProperties) {
+			return new WebexNotifier(repository, createNotifierRestTemplate(proxyProperties));
 		}
 
 	}

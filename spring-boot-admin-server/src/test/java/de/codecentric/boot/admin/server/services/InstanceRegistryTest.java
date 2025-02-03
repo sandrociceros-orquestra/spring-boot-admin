@@ -1,11 +1,11 @@
 /*
- * Copyright 2014-2018 the original author or authors.
+ * Copyright 2014-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package de.codecentric.boot.admin.server.services;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,7 +48,10 @@ public class InstanceRegistryTest {
 	public void setUp() {
 		repository = new EventsourcingInstanceRepository(new InMemoryEventStore());
 		idGenerator = new HashingInstanceUrlIdGenerator();
-		registry = new InstanceRegistry(repository, idGenerator);
+		registry = new InstanceRegistry(repository, idGenerator, (instance) -> {
+			Map<String, String> metadata = instance.getRegistration().getMetadata();
+			return !metadata.containsKey("displayed") || !metadata.get("displayed").equals("false");
+		});
 	}
 
 	@Test
@@ -76,8 +80,9 @@ public class InstanceRegistryTest {
 		InstanceId id = registry.register(Registration.create("abc", "http://localhost:8080/health").build()).block();
 		registry.deregister(id).block();
 
-		StepVerifier.create(registry.getInstance(id)).assertNext((app) -> assertThat(app.isRegistered()).isFalse())
-				.verifyComplete();
+		StepVerifier.create(registry.getInstance(id))
+			.assertNext((app) -> assertThat(app.isRegistered()).isFalse())
+			.verifyComplete();
 	}
 
 	@Test
@@ -92,7 +97,7 @@ public class InstanceRegistryTest {
 
 		// When instance registers second time
 		InstanceId refreshId = registry.register(Registration.create("abc", "http://localhost:8080/health").build())
-				.block();
+			.block();
 
 		assertThat(refreshId).isEqualTo(id);
 		StepVerifier.create(registry.getInstance(id)).assertNext((registered) -> {
@@ -108,10 +113,28 @@ public class InstanceRegistryTest {
 		InstanceId id2 = registry.register(Registration.create("abc", "http://localhost:8081/health").build()).block();
 		InstanceId id3 = registry.register(Registration.create("zzz", "http://localhost:9999/health").build()).block();
 
-		StepVerifier.create(registry.getInstances("abc")).recordWith(ArrayList::new).thenConsumeWhile((a) -> true)
-				.consumeRecordedWith((applications) -> assertThat(applications.stream().map(Instance::getId))
-						.doesNotContain(id3).containsExactlyInAnyOrder(id1, id2))
-				.verifyComplete();
+		StepVerifier.create(registry.getInstances("abc"))
+			.recordWith(ArrayList::new)
+			.thenConsumeWhile((a) -> true)
+			.consumeRecordedWith(
+					(applications) -> assertThat(applications.stream().map(Instance::getId)).doesNotContain(id3)
+						.containsExactlyInAnyOrder(id1, id2))
+			.verifyComplete();
+	}
+
+	@Test
+	public void findByNameAndFilter() {
+		InstanceId id1 = registry.register(Registration.create("abc", "http://localhost:8080/health").build()).block();
+		registry
+			.register(Registration.create("abc", "http://localhost:8081/health").metadata("displayed", "false").build())
+			.block();
+
+		StepVerifier.create(registry.getInstances("abc"))
+			.recordWith(ArrayList::new)
+			.thenConsumeWhile((a) -> true)
+			.consumeRecordedWith(
+					(applications) -> assertThat(applications.stream().map(Instance::getId)).containsExactly(id1))
+			.verifyComplete();
 	}
 
 }
